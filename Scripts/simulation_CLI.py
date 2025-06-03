@@ -187,7 +187,8 @@ def execute(file_name: str, connectivity, order_rule_name: str, unitary_energy_s
                                 return_all_dms=False)
 
     # Unpack the results - now with more components
-    pops, two_qubit_dms, three_qubit_dms, four_qubit_dms,five_qubit_dms,six_qubit_dms,seven_qubit_dms, orders_list = results
+    #pops, two_qubit_dms, three_qubit_dms, four_qubit_dms,five_qubit_dms,six_qubit_dms,seven_qubit_dms, orders_list = results
+    pops, two_qubit_dms, orders_list = results
 
     # Save each type of data
     save_data(file_name=file_name, data=orders_list, connectivity=connectivity,
