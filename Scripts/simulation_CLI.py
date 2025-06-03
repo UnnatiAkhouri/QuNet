@@ -207,32 +207,7 @@ def execute(file_name: str, connectivity, order_rule_name: str, unitary_energy_s
               measurment="pops", num_qubits=num_qbits)
 
     # Save the three and four qubit density matrices if they're not empty
-    if three_qubit_dms:
-        save_data(file_name=file_name, data=three_qubit_dms, connectivity=connectivity,
-                  unitary_energy_subspace=unitary_energy_subspace, unitary_seed=unitary_seed,
-                  order_rule_name=order_rule_name,
-                  measurment="three_qubit_dms", num_qubits=num_qbits)
 
-    if four_qubit_dms:
-        save_data(file_name=file_name, data=four_qubit_dms, connectivity=connectivity,
-                  unitary_energy_subspace=unitary_energy_subspace, unitary_seed=unitary_seed,
-                  order_rule_name=order_rule_name,
-                  measurment="four_qubit_dms", num_qubits=num_qbits)
-    if five_qubit_dms:
-        save_data(file_name=file_name, data=five_qubit_dms, connectivity=connectivity,
-                  unitary_energy_subspace=unitary_energy_subspace, unitary_seed=unitary_seed,
-                  order_rule_name=order_rule_name,
-                  measurment="five_qubit_dms", num_qubits=num_qbits)
-    if six_qubit_dms:
-        save_data(file_name=file_name, data=six_qubit_dms, connectivity=connectivity,
-                  unitary_energy_subspace=unitary_energy_subspace, unitary_seed=unitary_seed,
-                  order_rule_name=order_rule_name,
-                  measurment="six_qubit_dms", num_qubits=num_qbits)
-    if seven_qubit_dms:
-        save_data(file_name=file_name, data=seven_qubit_dms, connectivity=connectivity,
-                  unitary_energy_subspace=unitary_energy_subspace, unitary_seed=unitary_seed,
-                  order_rule_name=order_rule_name,
-                  measurment="seven_qubit_dms", num_qubits=num_qbits)
 
     if __name__ == "__main__":
         print("data saved, exiting")
