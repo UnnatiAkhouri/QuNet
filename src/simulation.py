@@ -128,8 +128,9 @@ def run(dm: DM.DensityMatrix, num_iterations: int, order_rule, first_10_order, s
                                    connectivity, sub_unitary, dm)
 
     # Return results based on whether all DMs were requested
-    measurement_results = (pops_values, two_qubit_dms,three_qubit_dms,four_qubit_dms,
-                           five_qubit_dms,six_qubit_dms,seven_qubit_dms, orders_list)
+    #measurement_results = (pops_values, two_qubit_dms,three_qubit_dms,four_qubit_dms, five_qubit_dms,six_qubit_dms,seven_qubit_dms, orders_list)
+    measurement_results = (pops_values, two_qubit_dms, orders_list)
+
     if return_all_dms:
         return measurement_results, all_dms
     else:
