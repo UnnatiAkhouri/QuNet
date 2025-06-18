@@ -119,6 +119,10 @@ def krylov_complexity_analysis(hamiltonian,initial_op, dt, t_max):
 
 #Code up to here as a function and then the rest make a note to analyze 
 
+
+
+
+
 # Example usage for XX+YY model
 def xx_yy_hamiltonian(J=1.0):
     """Two-qubit XX+YY Hamiltonian"""
