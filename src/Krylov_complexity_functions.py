@@ -8,6 +8,16 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.linalg import expm
 import seaborn as sns
+import numpy as np
+from scipy.linalg import expm
+
+import numpy as np
+from scipy.linalg import expm
+import matplotlib.pyplot as plt
+import numpy as np
+from scipy.linalg import expm
+import seaborn as sns
+
 
 def apply_unitary(U, operator):
     """Apply unitary: U†OU"""
@@ -82,10 +92,6 @@ def compute_krylov_complexity(U, O0, t_max, krylov_ops):
     return complexity, all_coefficients
 
 
-import numpy as np
-from scipy.linalg import expm
-
-
 def krylov_complexity_analysis(hamiltonian,initial_op, dt, t_max):
     """
     Complete Krylov complexity analysis for quantum circuit
@@ -111,37 +117,7 @@ def krylov_complexity_analysis(hamiltonian,initial_op, dt, t_max):
         'expansion_coefficients': coeffs
     }
 
-
-# Example usage for XX+YY model
-import numpy as np
-from scipy.linalg import expm
-
-
-def krylov_complexity_analysis(hamiltonian,initial_op, dt, t_max):
-    """
-    Complete Krylov complexity analysis for quantum circuit
-    """
-    # Generate unitary evolution operator
-    U = expm(-1j * hamiltonian * dt)
-
-    # Perform Gram-Schmidt orthonormalization
-    krylov_ops, a_coeffs, b_coeffs = modified_gram_schmidt_krylov(
-        U, initial_op, t_max + 1
-    )
-
-    # Compute Krylov complexity
-    complexity, coeffs = compute_krylov_complexity(
-        U, initial_op, t_max, krylov_ops
-    )
-
-    return {
-        'complexity': complexity,
-        'krylov_operators': krylov_ops,
-        'lanczos_a': a_coeffs,
-        'lanczos_b': b_coeffs,
-        'expansion_coefficients': coeffs
-    }
-
+#Code up to here as a function and then the rest make a note to analyze 
 
 # Example usage for XX+YY model
 def xx_yy_hamiltonian(J=1.0):
@@ -403,10 +379,7 @@ initial_operator = np.kron(sz, np.eye(2))  # σᶻ ⊗ I
 results = krylov_complexity_analysis(H,initial_operator, dt=0.1, t_max=50)
 analyze_system_scaling()
 
-import matplotlib.pyplot as plt
-import numpy as np
-from scipy.linalg import expm
-import seaborn as sns
+
 
 
 def visualize_krylov_analysis(results, dt, save_plots=False):
@@ -681,7 +654,7 @@ def analyze_xx_yy_transitions():
     return results
 
 
-# Example usage with enhanced visualization
+#Run to see what happens for XX YY ham
 if __name__ == "__main__":
     # Run complete analysis
     results = analyze_xx_yy_transitions()
