@@ -8,12 +8,18 @@ from scipy.linalg import expm
 
 class KrylovComplexity:
     def __init__(self, hamiltonian, dt, O0):
+        # Set Hamiltonian
+        self.H = hamiltonian
+
+        # Set time step
+        self.dt = dt
+        # Set initial operator
+        self.O0 = O0
 
         # Generate unitary evolution operator
         self.U = expm(-1j * hamiltonian * dt)
 
-        # Set initial operator
-        self.O0 = O0
+        
     
     def apply_unitary(self, operator):
         """Apply unitary: U†OU"""
@@ -40,7 +46,7 @@ class KrylovComplexity:
 
         for n in range(1, max_iterations):
             # Generate next operator
-            next_op = self.apply_unitary(self.U, current_op)  # U†OₙU
+            next_op = self.apply_unitary(current_op)  # U†OₙU
 
             # Modified Gram-Schmidt: remove projections sequentially
             for i in range(len(krylov_ops)):
@@ -62,7 +68,7 @@ class KrylovComplexity:
                 break
 
             krylov_ops.append(next_op / norm_val)
-            current_op = self.apply_unitary(self.U, krylov_ops[-2])  # For next iteration
+            current_op = self.apply_unitary(krylov_ops[-2])  # For next iteration
 
         return krylov_ops, lanczos_a, lanczos_b
 
@@ -87,8 +93,24 @@ class KrylovComplexity:
 
         return complexity, all_coefficients
     
+    def autocorrelation(self, t_max):
+        """
+        Compute autocorrelation function ⟨O₀|O(t)⟩
+        """
+        U = expm(-1j * self.H * self.dt)
+        autocorr = []
+        current_op = self.O0.copy()
 
-    def krylov_complexity_analysis(self, t_max):
+        for t in range(t_max + 1):
+            overlap = self.inner_product(self.O0, current_op)
+            autocorr.append(overlap)
+            if t < t_max:
+                current_op = self.apply_unitary(current_op)
+
+        return np.array(autocorr)
+    
+
+    def analyze(self, t_max):
         """
         Complete Krylov complexity analysis for quantum circuit
         """
