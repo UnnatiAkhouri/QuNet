@@ -12,17 +12,18 @@ from collections import defaultdict, deque
 
 #This function draws a quantum circuit diagram based on the number of qubits, timesteps, and a sequence of gates.
 
-def draw_quantum_circuit(num_qubit, timesteps, gate_sequence):
+def draw_quantum_circuit(num_qubit, timesteps, gate_sequence,circuitname='quantum_circuit.png'):
     fig, ax = plt.subplots(figsize=(2 + timesteps, 1 + num_qubit * 0.7))
     ax.axis('off')
 
     x_gap = 1
-    dot_radius = 0.1
+    dot_radius = 0.05
     pastel_colors = {
         1: '#b3c6ff',  # blue
         2: '#C1E1C1',  # green
         3: '#fff7b3',  # yellow
         4: '#ffb3d9',  # pink
+        5: 'orange'
     }
 
     # Draw qubit lines and dots
@@ -50,6 +51,8 @@ def draw_quantum_circuit(num_qubit, timesteps, gate_sequence):
                 if n == 0 or n > 4:
                     continue
                 color = pastel_colors.get(n, '#e0e0e0')
+                if label == "Noise":
+                    color = '#FFD8B1'
                 x = (t + 1) * x_gap
                 qubits_sorted = sorted(qubits)
                 y_positions = [num_qubit - q for q in qubits_sorted]
@@ -58,7 +61,7 @@ def draw_quantum_circuit(num_qubit, timesteps, gate_sequence):
                     y = num_qubit - q
                     ax.add_patch(plt.Rectangle((x - 0.2, y - 0.2), 0.4, 0.4,
                                                facecolor=color, ec='black', zorder=3))
-                    ax.text(x, y, str(label), ha='center', va='center', fontsize=12, zorder=4)
+                    ax.text(x, y, str(label), ha='center', va='center', fontsize=12, zorder=4,rotation =0)
                     used_qubits.add(q)
                 elif all(qubits_sorted[i] + 1 == qubits_sorted[i+1] for i in range(n-1)):
                     y_min = min(y_positions)
@@ -66,7 +69,7 @@ def draw_quantum_circuit(num_qubit, timesteps, gate_sequence):
                     height = y_max - y_min + 0.4
                     ax.add_patch(plt.Rectangle((x - 0.25, y_min - 0.2), 0.5, height,
                                                facecolor=color, ec='black', zorder=3))
-                    ax.text(x, (y_min + y_max) / 2, str(label), ha='center', va='center', fontsize=12, zorder=4)
+                    ax.text(x, (y_min + y_max) / 2, str(label), ha='center', va='center', fontsize=12, zorder=4, rotation =90)
                     used_qubits.update(qubits)
                 else:
                     for y in y_positions:
@@ -103,6 +106,7 @@ def draw_quantum_circuit(num_qubit, timesteps, gate_sequence):
     ax.set_xlim(-0.5, timesteps * x_gap + 0.5)
     ax.set_ylim(0.5, num_qubit + 0.5)
     plt.tight_layout()
+    plt.savefig(circuitname,dpi=300, bbox_inches='tight')
     plt.show()
 
 #Visualize some famous quantum algorithms using the draw_quantum_circuit function.
@@ -199,6 +203,44 @@ def random_two_qubit_gate_sequence(num_qubit, timesteps, gate_name='CNOT'):
                 used.add(q)
                 used.add(q - 1)
         gate_sequence.append(gates)
+    return gate_sequence
+
+
+def random_two_qubit_gate_sequence_with_edge_noise(num_qubit, timesteps, gate_name='CNOT', p=0.1):
+    """
+    Generates a random two-qubit gate sequence for a given number of qubits and timesteps.
+    After each layer, applies noise to edge qubits (0 and num_qubit-1) with probability p.
+    Returns a list of lists (length num_qubit) for each timestep (including noise layers).
+    """
+    gate_sequence = []
+    for t in range(timesteps):
+        # Two-qubit gate layer
+        used = set()
+        gates = [''] * num_qubit
+        qubit_indices = list(range(num_qubit))
+        random.shuffle(qubit_indices)
+        for q in qubit_indices:
+            if q in used:
+                continue
+            direction = random.choice(['left', 'right'])
+            if direction == 'right' and q < num_qubit - 1 and (q + 1) not in used:
+                gates[q] = (gate_name, q, q + 1)
+                used.add(q)
+                used.add(q + 1)
+            elif direction == 'left' and q > 0 and (q - 1) not in used:
+                gates[q] = (gate_name, q, q - 1)
+                used.add(q)
+                used.add(q - 1)
+        gate_sequence.append(gates)
+        # Noise layer at edges with probability p
+        noise_layer = [''] * num_qubit
+        if random.random() < p:
+            noise_layer[0] = ("Noise", 0,1)
+        if random.random() < p:
+            noise_layer[-1] = ("Noise", num_qubit - 1,num_qubit-2)
+        # Only add noise layer if any noise is applied
+        if any(isinstance(g, tuple) and g[0] == "Noise" for g in noise_layer):
+            gate_sequence.append(noise_layer)
     return gate_sequence
 
 #Now add measurement gates to the random two-qubit gate sequence.
@@ -444,3 +486,8 @@ def plot_minimal_cut_subsystem_size_separate():
         plt.tight_layout()
         plt.show()
 
+gates=[[('iSWAP',0,1)],[('Noise',0,1)],[('iSWAP',0,1)],[('Noise',0,1)]]
+
+gates=random_two_qubit_gate_sequence_with_edge_noise(8, 10, gate_name='iSWAP',p=0.5)
+draw_quantum_circuit(8, 10, gates, "h.png")
+#draw_quantum_circuit(2, 4, gates, "two_q_noise_circuit.png")

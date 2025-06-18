@@ -12,6 +12,7 @@ from scipy.stats import unitary_group
 import scipy.sparse as sp
 SPARSE_TYPE = setup.SPARSE_TYPE
 
+from itertools import product
 from scipy.stats import rv_continuous
 
 class sin_prob_dist(rv_continuous):
@@ -28,94 +29,93 @@ Z = np.array([[1, 0], [0, -1]], dtype=complex)
 # Samples of theta should be drawn from between 0 and pi
 sin_sampler = sin_prob_dist(a=0, b=np.pi)
 
-from itertools import product
-
-# Pauli matrices as constants
-I = np.array([[1, 0], [0, 1]], dtype=complex)
-X = np.array([[0, 1], [1, 0]], dtype=complex)
-Y = np.array([[0, -1j], [1j, 0]], dtype=complex)
-Z = np.array([[1, 0], [0, -1]], dtype=complex)
-
-PAULI = {'I': I, 'X': X, 'Y': Y, 'Z': Z}
-
-def independent_weak_measurement_kraus(alpha1, alpha2, observable1='Z', observable2='Z'):
+def check_kraus_completeness(self, kraus_ops: list, tol: float = 1e-10) -> bool:
     """
-    Create Kraus operators for independent weak measurements on two qubits.
-
-    Parameters:
-    alpha1, alpha2: measurement strengths (0 = no measurement, 1 = projective)
-    observable1, observable2: which Pauli observable to measure ('X', 'Y', 'Z')
-
-    Returns:
-    List of 4x4 Kraus operators
+    Check if a set of Kraus operators is complete (trace-preserving).
+    Returns True if sum K_i^\dagger K_i == I (within tolerance).
     """
-    obs1 = PAULI[observable1]
-    obs2 = PAULI[observable2]
+    d = kraus_ops[0].shape[0]
+    completeness = sum([K.conj().T @ K for K in kraus_ops])
+    return np.allclose(completeness, np.eye(d), atol=tol)
 
-    def single_qubit_kraus(alpha, observable):
-        """Single qubit weak measurement Kraus operators"""
-        eigvals, eigvecs = np.linalg.eigh(observable)
-        P0 = np.outer(eigvecs[:, 0], eigvecs[:, 0].conj())  # Projector onto first eigenspace
-        P1 = np.outer(eigvecs[:, 1], eigvecs[:, 1].conj())  # Projector onto second eigenspace
+# def independent_weak_measurement_kraus(alpha1, alpha2, observable1='Z', observable2='Z'):
+#     """
+#     Create Kraus operators for independent weak measurements on two qubits.
+#
+#     Parameters:
+#     alpha1, alpha2: measurement strengths (0 = no measurement, 1 = projective)
+#     observable1, observable2: which Pauli observable to measure ('X', 'Y', 'Z')
+#
+#     Returns:
+#     List of 4x4 Kraus operators
+#     """
+#     obs1 = PAULI[observable1]
+#     obs2 = PAULI[observable2]
+#
+#     def single_qubit_kraus(alpha, observable):
+#         """Single qubit weak measurement Kraus operators"""
+#         eigvals, eigvecs = np.linalg.eigh(observable)
+#         P0 = np.outer(eigvecs[:, 0], eigvecs[:, 0].conj())  # Projector onto first eigenspace
+#         P1 = np.outer(eigvecs[:, 1], eigvecs[:, 1].conj())  # Projector onto second eigenspace
+#
+#         M0 = np.sqrt(1 - alpha) * I + np.sqrt(alpha) * P0
+#         M1 = np.sqrt(alpha) * P1
+#
+#         return [M0, M1]
+#
+#     kraus1 = single_qubit_kraus(alpha1, obs1)
+#     kraus2 = single_qubit_kraus(alpha2, obs2)
+#
+#     # Tensor product for all combinations
+#     kraus_operators = []
+#     for M1, M2 in product(kraus1, kraus2):
+#         kraus_operators.append(np.kron(M1, M2))
+#
+#     return kraus_operators
 
-        M0 = np.sqrt(1 - alpha) * I + np.sqrt(alpha) * P0
-        M1 = np.sqrt(alpha) * P1
-
-        return [M0, M1]
-
-    kraus1 = single_qubit_kraus(alpha1, obs1)
-    kraus2 = single_qubit_kraus(alpha2, obs2)
-
-    # Tensor product for all combinations
-    kraus_operators = []
-    for M1, M2 in product(kraus1, kraus2):
-        kraus_operators.append(np.kron(M1, M2))
-
-    return kraus_operators
-
-def correlated_weak_measurement_kraus(alpha, correlation_type='ZZ'):
-    """
-    Create Kraus operators for correlated two-qubit weak measurement.
-
-    Parameters:
-    alpha: measurement strength (0 to 1)
-    correlation_type: type of correlation ('ZZ', 'XX', 'YY', 'XZ', etc.)
-
-    Returns:
-    List of 4x4 Kraus operators
-    """
-    obs1 = PAULI[correlation_type[0]]
-    obs2 = PAULI[correlation_type[1]]
-    two_qubit_obs = np.kron(obs1, obs2)
-
-    # Diagonalize the two-qubit observable
-    eigvals, eigvecs = np.linalg.eigh(two_qubit_obs)
-    unique_eigvals = np.unique(np.round(eigvals, 10))
-
-    kraus_operators = []
-    for eigval in unique_eigvals:
-        # Find eigenvectors with this eigenvalue
-        mask = np.abs(eigvals - eigval) < 1e-10
-        indices = np.where(mask)[0]
-
-        # Construct projector onto eigenspace
-        P = np.zeros((4, 4), dtype=complex)
-        for idx in indices:
-            v = eigvecs[:, idx]
-            P += np.outer(v, v.conj())
-
-        # Weak measurement Kraus operator
-        if np.abs(eigval - 1) < 1e-10:  # +1 eigenvalue
-            M = np.sqrt((1 + alpha) / 2) * np.eye(4) + np.sqrt(alpha * (1 - alpha) / 2) * P
-        elif np.abs(eigval + 1) < 1e-10:  # -1 eigenvalue
-            M = np.sqrt((1 + alpha) / 2) * np.eye(4) - np.sqrt(alpha * (1 - alpha) / 2) * P
-        else:
-            # General case
-            M = np.sqrt(1 - alpha) * np.eye(4) + np.sqrt(alpha) * P
-
-        kraus_operators.append(M)
-
-    return kraus_operators
+# def correlated_weak_measurement_kraus(alpha, correlation_type='ZZ'):
+#     """
+#     Create Kraus operators for correlated two-qubit weak measurement.
+#
+#     Parameters:
+#     alpha: measurement strength (0 to 1)
+#     correlation_type: type of correlation ('ZZ', 'XX', 'YY', 'XZ', etc.)
+#
+#     Returns:
+#     List of 4x4 Kraus operators
+#     """
+#     obs1 = PAULI[correlation_type[0]]
+#     obs2 = PAULI[correlation_type[1]]
+#     two_qubit_obs = np.kron(obs1, obs2)
+#
+#     # Diagonalize the two-qubit observable
+#     eigvals, eigvecs = np.linalg.eigh(two_qubit_obs)
+#     unique_eigvals = np.unique(np.round(eigvals, 10))
+#
+#     kraus_operators = []
+#     for eigval in unique_eigvals:
+#         # Find eigenvectors with this eigenvalue
+#         mask = np.abs(eigvals - eigval) < 1e-10
+#         indices = np.where(mask)[0]
+#
+#         # Construct projector onto eigenspace
+#         P = np.zeros((4, 4), dtype=complex)
+#         for idx in indices:
+#             v = eigvecs[:, idx]
+#             P += np.outer(v, v.conj())
+#
+#         # Weak measurement Kraus operator
+#         if np.abs(eigval - 1) < 1e-10:  # +1 eigenvalue
+#             M = np.sqrt((1 + alpha) / 2) * np.eye(4) + np.sqrt(alpha * (1 - alpha) / 2) * P
+#         elif np.abs(eigval + 1) < 1e-10:  # -1 eigenvalue
+#             M = np.sqrt((1 + alpha) / 2) * np.eye(4) - np.sqrt(alpha * (1 - alpha) / 2) * P
+#         else:
+#             # General case
+#             M = np.sqrt(1 - alpha) * np.eye(4) + np.sqrt(alpha) * P
+#
+#         kraus_operators.append(M)
+#
+#     return kraus_operators
 
 
 def phase_covariant_channel_affine(l1: int, l3:int, tau3:int, seed=None):
@@ -292,59 +292,87 @@ def example_perfectly_correlated_kraus():
         print(k)
     print(f"Correlated channel has {len(corr_kraus)} Kraus operators (should be 4)")
 
-
-def two_qubit_depolarizing_kraus(p):
+#New
+def independent_depolarizing(params: list[float]) -> list[np.ndarray]:
+    """Independent depolarizing noise
+    params: [p1, p2] - depolarizing probabilities for each qubit
     """
-    Two-qubit depolarizing channel
+    p1, p2 = params[0] , params[1]
 
-    Parameters:
-    -----------
-    p : float
-        Depolarizing probability (0 ≤ p ≤ 1)
+    # Kraus operators for single-qubit depolarizing
+    K_1 = [np.sqrt(1 - 3 * p1 / 4) * I,
+           np.sqrt(p1 / 4) * X,
+           np.sqrt(p1 / 4) * Y,
+           np.sqrt(p1 / 4) * Z]
 
-    Returns:
-    --------
-    kraus_ops : list of 4x4 arrays
-        16 Kraus operators
-    """
+    K_2 = [np.sqrt(1 - 3 * p2 / 4) * I,
+           np.sqrt(p2 / 4) * X,
+           np.sqrt(p2 / 4) * Y,
+           np.sqrt(p2 / 4) * Z]
+
+    # Combine for two qubits
     kraus_ops = []
-
-    # Identity term
-    kraus_ops.append(np.sqrt(1 - p) * np.kron(I, I))
-
-    # All combinations of Pauli matrices (except I⊗I)
-    paulis = [I, X, Y, Z]
-    for i in range(4):
-        for j in range(4):
-            if i == 0 and j == 0:  # Skip I⊗I (already added)
-                continue
-            kraus_ops.append(np.sqrt(p / 15) * np.kron(paulis[i], paulis[j]))
+    for k1 in K_1:
+        for k2 in K_2:
+            kraus_ops.append(np.kron(k1, k2))
 
     return kraus_ops
 
+#new
+def correlated_depolarizing(params: list[float]) -> list[np.ndarray]:
+        """Correlated depolarizing noise
+        params: [p] - probability of correlated error
+        """
+        p = params[0]
 
-def independent_dephasing_kraus(p1, p2):
+        # Apply same Pauli error to both qubits
+        K0 = np.sqrt(1 - 3 * p) * np.kron(I, I)
+        K1 = np.sqrt(p) * np.kron(X, X)
+        K2 = np.sqrt(p) * np.kron(Y, Y)
+        K3 = np.sqrt(p) * np.kron(Z, Z)
+
+        return [K0, K1, K2, K3]
+
+#new
+def independent_dephasing(params: list[float]) -> list[np.ndarray]:
+        """Independent dephasing noise
+        params: [gamma1, gamma2] - dephasing rates for each qubit
+        """
+        gamma1, gamma2 = params[0], params[1]
+
+        # Kraus operators
+        p1 = gamma1
+        p2 = gamma2
+        p0 = 1 - p1
+        p4 = 1 - p2
+
+        K0 = np.sqrt(p0)*np.sqrt(p4) * np.kron(I, I)
+        K1 = np.sqrt(p1) * np.kron(Z, I)
+        K2 = np.sqrt(p2) * np.kron(I, Z)
+        K3 = np.sqrt(p1)*np.sqrt(p2) * np.kron(Z, Z)
+
+        return [K0, K1, K2, K3]
+
+#new
+def correlated_dephasing(params: list[float]) -> list[np.ndarray]:
+    """Correlated dephasing noise
+    params: [gamma1, gamma2, gamma_c] - independent and correlated dephasing rates
     """
-    Independent dephasing on both qubits
+    gamma1, gamma2, gamma_c = params[0], params[1], params[2]
 
-    Parameters:
-    -----------
-    p1, p2 : float
-        Dephasing probabilities for qubits 1 and 2
+    # Probabilities for Kraus operators
+    p1 = gamma1
+    p2 = gamma2
+    pc = gamma_c
+    p0 = 1 - p1 - p2 - pc  # Ensure probabilities sum to 1
 
-    Returns:
-    --------
-    kraus_ops : list of 4x4 arrays
-        4 Kraus operators
-    """
-    kraus_ops = [
-        np.sqrt((1 - p1) * (1 - p2)) * np.kron(I, I),
-        np.sqrt(p1 * (1 - p2)) * np.kron(Z, I),
-        np.sqrt((1 - p1) * p2) * np.kron(I, Z),
-        np.sqrt(p1 * p2) * np.kron(Z, Z)
-    ]
-    return kraus_ops
+    # Kraus operators
+    K0 = np.sqrt(p0) * np.kron(I, I)  # No error
+    K1 = np.sqrt(p1) * np.kron(Z, I)  # Dephasing on qubit 1
+    K2 = np.sqrt(p2) * np.kron(I, Z)  # Dephasing on qubit 2
+    K3 = np.sqrt(pc) * np.kron(Z, Z)  # Correlated dephasing
 
+    return [K0, K1, K2, K3]
 
 def independent_bitflip_kraus(p1, p2):
     """
@@ -368,56 +396,57 @@ def independent_bitflip_kraus(p1, p2):
     ]
     return kraus_ops
 
-
-def independent_amplitude_damping_kraus(gamma1, gamma2):
+#New
+def independent_damping(params:list[float]) -> list[np.ndarray]:
+    """Independent amplitude damping
+    params: [gamma1, gamma2] - damping rates for each qubit
     """
-    Independent amplitude damping on both qubits
+    gamma1, gamma2 = params[0], params[1]
 
-    Parameters:
-    -----------
-    gamma1, gamma2 : float
-        Damping rates for qubits 1 and 2
+    # Kraus operators for independent damping
+    # Qubit 1
+    K0_1 = np.array([[1, 0], [0, np.sqrt(1 - gamma1)]])
+    K1_1 = np.array([[0, np.sqrt(gamma1)], [0, 0]])
+    K0_2 = np.array([[1, 0], [0, np.sqrt(1 - gamma2)]])
+    K1_2 = np.array([[0, np.sqrt(gamma2)], [0, 0]])
 
-    Returns:
-    --------
-    kraus_ops : list of 4x4 arrays
-        4 Kraus operators
-    """
-    # Single-qubit amplitude damping operators
-    A0_1 = np.array([[1, 0], [0, np.sqrt(1 - gamma1)]], dtype=complex)
-    A1_1 = np.array([[0, np.sqrt(gamma1)], [0, 0]], dtype=complex)
-    A0_2 = np.array([[1, 0], [0, np.sqrt(1 - gamma2)]], dtype=complex)
-    A1_2 = np.array([[0, np.sqrt(gamma2)], [0, 0]], dtype=complex)
+    # Combined Kraus operators
+    K00 = np.kron(K0_1, K0_2)
+    K01 = np.kron(K0_1, K1_2)
+    K10 = np.kron(K1_1, K0_2)
+    K11 = np.kron(K1_1, K1_2)
 
-    kraus_ops = [
-        np.kron(A0_1, A0_2),
-        np.kron(A1_1, A0_2),
-        np.kron(A0_1, A1_2),
-        np.kron(A1_1, A1_2)
-    ]
-    return kraus_ops
+    return [K00, K01, K10, K11]
 
+#new
+def correlated_damping(params: list[float]) -> list[np.ndarray]:
+        """Correlated amplitude damping
+        params: [gamma1, gamma2, gamma_c] - independent and correlated damping rates
+        """
+        gamma1, gamma2, gamma_c = params[0], params[1], params[2]
 
-def correlated_dephasing_kraus(p):
-    """
-    Correlated dephasing (both qubits dephase together)
+        # Probabilities
+        p1 = gamma1
+        p2 = gamma2
+        pc = gamma_c
+        p0 = 1 - p1 - p2 - pc  # Ensure normalization
 
-    Parameters:
-    -----------
-    p : float
-        Correlation parameter (-1 ≤ p ≤ 1)
+        # Kraus operators
+        I = np.eye(2)
+        zero = np.array([[1, 0], [0, 0]])
+        one = np.array([[0, 0], [0, 1]])
+        sigma_minus = np.array([[0, 0], [1, 0]])
 
-    Returns:
-    --------
-    kraus_ops : list of 4x4 arrays
-        2 Kraus operators
-    """
-    kraus_ops = [
-        np.sqrt((1 + p) / 2) * np.kron(I, I),
-        np.sqrt((1 - p) / 2) * np.kron(Z, Z)
-    ]
-    return kraus_ops
+        # No jump
+        K0 = np.sqrt(p0) * np.kron(I, I)
+        # Damping on qubit 1
+        K1 = np.sqrt(p1) * np.kron(sigma_minus, I)
+        # Damping on qubit 2
+        K2 = np.sqrt(p2) * np.kron(I, sigma_minus)
+        # Correlated damping (both qubits)
+        K3 = np.sqrt(pc) * np.kron(sigma_minus, sigma_minus)
 
+        return [K0, K1, K2, K3]
 
 def pauli_twirling_kraus():
     """

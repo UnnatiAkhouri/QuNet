@@ -9,8 +9,14 @@ import sys, argparse, h5py
 import matplotlib.pyplot as plt
 import numpy as np
 
-sys.path.insert(0, '..')
+import src.channels
+from src.channels import (phase_covariant_kraus_operators, create_perfectly_correlated_2qubit_kraus,create_uncorrelated_2qubit_kraus,embed_edge_channel_full, correlated_depolarizing,
+CNOT_kraus)
+from src.density_matrix import Identity
+from src.ket import canonical_basis
 
+sys.path.insert(0, '..')
+from src import simulation_with_channels as sim_with_channels
 from src import (
     density_matrix as DM,
     simulation as sim,
@@ -21,14 +27,14 @@ from src import (
 
 
 def execute(file_name: str, connectivity, order_rule_name: str, unitary_energy_subspace, unitary_seed, num_steps, initial_pops,
-            evolution_generator_type: str, chunk_size, verbosity=.1, first_10_order=None,return_all_dms=False):
+            evolution_generator_type: str, chunk_size, channel_name: str,channel_prob:int ,verbosity=.1, first_10_order=None,return_all_dms=False):
     """
     file_name: name of the file to save the data to (without the .hdf5 extension) example: "ZestyGodzilla"
     connectivity: the type of connectivity to use for the ordering. options: "gas", "c5", "c6", "c7"
     order_rule_name: a string represneting which order rule to use
     unitary_energy_subspace: the energy subspace to use for the unitary evolution
     unitary_seed: the seed to use for the unitary evolution
-    num_steps: the number of steps to take
+    num_steps: the number of steps to ,take
     initial_pops: the initial populations of the qubits
     chunk_size: the size of the chunks to use for the unitary evolution
     evolution_generator_type: the type of evolution to use. options: "unitary","unitary.05","hamiltonian", "hamiltonian_old", for both hamiltonians the dtheta is .1
@@ -36,6 +42,7 @@ def execute(file_name: str, connectivity, order_rule_name: str, unitary_energy_s
     """
 
     num_qbits = len(initial_pops)
+    results = None
 
     assert num_qbits % chunk_size == 0, "Chunk size must divide number of qubits"
     num_chunks = num_qbits // chunk_size
@@ -110,11 +117,13 @@ def execute(file_name: str, connectivity, order_rule_name: str, unitary_energy_s
     basis = DM.energy_basis(chunk_size)
     identity = DM.Identity(basis)
     if __name__ == "__main__": print("generating unitary")
+    channels = None
     if unitary_energy_subspace:
 
         unitary_energy_subspace = int(unitary_energy_subspace)
 
         # match evolution_generator_type: unitary, hamiltonian, hamiltonian_old
+        sub_unitary = None
         match evolution_generator_type:
 
             case "haar2Qunitary":
@@ -167,6 +176,38 @@ def execute(file_name: str, connectivity, order_rule_name: str, unitary_energy_s
         composite_unitaries = [DM.tensor([sub_unitary if i == j else identity for i in range(num_chunks)]) for j in
                                range(num_chunks)]
         unitary = np.prod(composite_unitaries)
+    sub_channel = Identity(canonical_basis(2))
+    match channel_name:
+        case "phase_covariant_uncorrelated":
+            kraus_ops = phase_covariant_kraus_operators(0.01, 0.7,0.1)
+            sub_channel = create_uncorrelated_2qubit_kraus(kraus_ops)
+        case "phase_covariant_correlated":
+            kraus_ops = phase_covariant_kraus_operators(0.01, 0.7,0.1)
+            sub_channel = create_perfectly_correlated_2qubit_kraus(kraus_ops)
+        case "two_q_depolarizing":
+            sub_channel = correlated_depolarizing(0.3)
+        case "CNOT":
+            sub_channel = CNOT_kraus()
+        case "indep_dephasing":
+            sub_channel=src.channels.independent_dephasing([0.1,0.1])
+        case "indep_bitflip":
+            sub_channel=src.channels.independent_bitflip_kraus(0.1,0.1)
+        case "indep_amplitude_damping":
+            sub_channel=src.channels.independent_damping([0.1,0.1])
+        case "correlated_dephasing":
+            sub_channel=src.channels.correlated_dephasing([0.1,0.1,0.3])
+        case "pauli_twirl":
+            sub_channel=src.channels.pauli_twirling_kraus()
+        #case "indep_meas":
+        #    sub_channel = src.channels.independent_weak_measurement_kraus(0.1,0.2)
+        #case "corr_meas":
+        #    sub_channel = src.channels.correlated_weak_measurement_kraus(0.3)
+        case "None":
+            sub_channel = Identity(4)
+        case _:
+            raise ValueError(f"channel_name {channel_name} not recognized")
+    composite_channel = embed_edge_channel_full(num_qbits,sub_channel,edge_position="start")
+    channels=composite_channel
 
     if __name__ == "__main__": print("unitary generated\n")
     if __name__ == "__main__": print("constructing system")
@@ -175,20 +216,38 @@ def execute(file_name: str, connectivity, order_rule_name: str, unitary_energy_s
     if __name__ == "__main__": print("running simulation")
 #three_qubit_dms
 #two_qubit_dms
-
-    results, final_dm = sim.run(system,
-                                num_iterations=num_steps,
-                                Unitaries=unitary,
-                                sub_unitary=sub_unitary,
-                                verbose=verbosity,
-                                order_rule=order_rule,
-                                first_10_order=first_10_order,
-                                connectivity=connectivity,
-                                return_all_dms=False)
+    if channel_name=="None":
+        results, final_dm = sim.run(system,
+                                    num_iterations=num_steps,
+                                    Unitaries=unitary,
+                                    sub_unitary=sub_unitary,
+                                    verbose=verbosity,
+                                    order_rule=order_rule,
+                                    first_10_order=first_10_order,
+                                    connectivity=connectivity,
+                                    return_all_dms=False)
+        #pops, two_qubit_dms, three_qubit_dms,orders_list = results
+        pops, two_qubit_dms, three_qubit_dms, four_qubit_dms, five_qubit_dms, six_qubit_dms, seven_qubit_dms,eight_qubit_dms, orders_list = results
+    elif channel_name=="phase_covariant_uncorrelated" or channel_name=="phase_covariant_correlated"or channel_name=="two_q_depolarizing" or channel_name=="CNOT" or channel_name=="indep_dephasing" or channel_name=="indep_bitflip" or channel_name=="indep_amplitude_damping" or channel_name=="correlated_dephasing" or channel_name=="pauli_twirl" or channel_name=="corr_meas" or channel_name=="indep_meas":
+        results, final_dm = sim_with_channels.run(system,
+                                    num_iterations=num_steps,
+                                    Unitaries=unitary,
+                                    sub_unitary=sub_unitary,
+                                    verbose=verbosity,
+                                    order_rule=order_rule,
+                                    first_10_order=first_10_order,
+                                    connectivity=connectivity,
+                                    channel_prob=channel_prob,
+                                    channels= channels,
+                                    return_all_dms=False)
+        #pops, two_qubit_dms, three_qubit_dms,orders_list = results
+        pops, two_qubit_dms, three_qubit_dms, four_qubit_dms, five_qubit_dms, six_qubit_dms, seven_qubit_dms,eight_qubit_dms, orders_list = results
+    else:
+        raise ValueError(f"channel_name {channel_name} not supported")
 
     # Unpack the results - now with more components
     #pops, two_qubit_dms, three_qubit_dms, four_qubit_dms,five_qubit_dms,six_qubit_dms,seven_qubit_dms, orders_list = results
-    pops, two_qubit_dms, orders_list = results
+    #pops, two_qubit_dms, orders_list = results
 
     # Save each type of data
     save_data(file_name=file_name, data=orders_list, connectivity=connectivity,
@@ -205,6 +264,39 @@ def execute(file_name: str, connectivity, order_rule_name: str, unitary_energy_s
               unitary_energy_subspace=unitary_energy_subspace, unitary_seed=unitary_seed,
               order_rule_name=order_rule_name,
               measurment="pops", num_qubits=num_qbits)
+
+    if three_qubit_dms:
+        save_data(file_name=file_name, data=three_qubit_dms, connectivity=connectivity,
+                  unitary_energy_subspace=unitary_energy_subspace, unitary_seed=unitary_seed,
+                  order_rule_name=order_rule_name,
+                  measurment="three_qubit_dms", num_qubits=num_qbits)
+
+    if four_qubit_dms:
+        save_data(file_name=file_name, data=four_qubit_dms, connectivity=connectivity,
+                  unitary_energy_subspace=unitary_energy_subspace, unitary_seed=unitary_seed,
+                  order_rule_name=order_rule_name,
+                  measurment="four_qubit_dms", num_qubits=num_qbits)
+    if five_qubit_dms:
+        save_data(file_name=file_name, data=five_qubit_dms, connectivity=connectivity,
+                  unitary_energy_subspace=unitary_energy_subspace, unitary_seed=unitary_seed,
+                  order_rule_name=order_rule_name,
+                  measurment="five_qubit_dms", num_qubits=num_qbits)
+    if six_qubit_dms:
+        save_data(file_name=file_name, data=six_qubit_dms, connectivity=connectivity,
+                  unitary_energy_subspace=unitary_energy_subspace, unitary_seed=unitary_seed,
+                  order_rule_name=order_rule_name,
+                  measurment="six_qubit_dms", num_qubits=num_qbits)
+    if seven_qubit_dms:
+        save_data(file_name=file_name, data=seven_qubit_dms, connectivity=connectivity,
+                  unitary_energy_subspace=unitary_energy_subspace, unitary_seed=unitary_seed,
+                  order_rule_name=order_rule_name,
+                  measurment="seven_qubit_dms", num_qubits=num_qbits)
+
+    if eight_qubit_dms:
+        save_data(file_name=file_name, data=eight_qubit_dms, connectivity=connectivity,
+                  unitary_energy_subspace=unitary_energy_subspace, unitary_seed=unitary_seed,
+                  order_rule_name=order_rule_name,
+                  measurment="eight_qubit_dms", num_qubits=num_qbits)
 
     # Save the three and four qubit density matrices if they're not empty
 
@@ -310,4 +402,4 @@ if __name__ == "__main__":
             unitary_seed=unitary_seed,
             num_steps=num_steps,
             initial_pops=initial_pops,
-            evolution_generator_type = evolution_generator_type, chunk_size=2)
+            evolution_generator_type = evolution_generator_type, chunk_size=2,channel_name="phase_covariant_uncorrelated",channel_prob=0.5,)

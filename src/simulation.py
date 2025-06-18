@@ -35,11 +35,12 @@ def run(dm: DM.DensityMatrix, num_iterations: int, order_rule, first_10_order, s
     # Initialize dictionaries for measurements
     pops_values = {}
     two_qubit_dms = {}
-    ##three_qubit_dms = {}
-    #four_qubit_dms = {}
-    #five_qubit_dms = {}
-    #six_qubit_dms = {}
-    #seven_qubit_dms = {}
+    three_qubit_dms = {}
+    four_qubit_dms = {}
+    five_qubit_dms = {}
+    six_qubit_dms = {}
+    seven_qubit_dms = {}
+    eight_qubit_dms = {}
     orders_list = []  # To store orders used at each step
 
     # Compute initial measurements
@@ -110,12 +111,13 @@ def run(dm: DM.DensityMatrix, num_iterations: int, order_rule, first_10_order, s
         # Only compute additional measurements for the last 5 steps
         if i > num_iterations - 5:
             # You can add additional measurements here
-            #two_qubit_dms[i] = measure.two_qbit_dm_of_every_pair(dm)
-            #three_qubit_dms[i] = measure.three_qbit_dm_of_every_triplet(dm)
-            #four_qubit_dms[i] = measure.four_qbit_dm_of_every_quartet(dm)
-            #five_qubit_dms[i] = measure.five_qbit_dm_of_every_quintet(dm)
-            #six_qubit_dms[i] = measure.six_qbit_dm_of_every_sextet(dm)
-            #seven_qubit_dms[i] = measure.seven_qbit_dm_of_every_seventet(dm)
+            two_qubit_dms[i] = measure.two_qbit_dm_of_every_pair(dm)
+            three_qubit_dms[i] = measure.three_qbit_dm_of_every_triplet(dm)
+            four_qubit_dms[i] = measure.four_qbit_dm_of_every_quartet(dm)
+            five_qubit_dms[i] = measure.five_qbit_dm_of_every_quintet(dm)
+            six_qubit_dms[i] = measure.six_qbit_dm_of_every_sextet(dm)
+            seven_qubit_dms[i] = measure.seven_qbit_dm_of_every_seventet(dm)
+            eight_qubit_dms[i] = measure.eight_qbit_dm_of_every_octet(dm)
             pass
 
         # Calculate the next order for iterations after 10
@@ -128,8 +130,8 @@ def run(dm: DM.DensityMatrix, num_iterations: int, order_rule, first_10_order, s
                                    connectivity, sub_unitary, dm)
 
     # Return results based on whether all DMs were requested
-    #measurement_results = (pops_values, two_qubit_dms,three_qubit_dms,four_qubit_dms, five_qubit_dms,six_qubit_dms,seven_qubit_dms, orders_list)
-    measurement_results = (pops_values, two_qubit_dms, orders_list)
+    measurement_results = (pops_values, two_qubit_dms,three_qubit_dms,four_qubit_dms, five_qubit_dms,six_qubit_dms,seven_qubit_dms,eight_qubit_dms, orders_list)
+    #measurement_results = (pops_values, two_qubit_dms, orders_list)
 
     if return_all_dms:
         return measurement_results, all_dms
