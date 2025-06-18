@@ -9,6 +9,7 @@ SPARSE_TYPE = setup.SPARSE_TYPE
 import numpy as np
 import src.density_matrix as DM
 from src.density_matrix import DensityMatrix, n_thermal_qbits, dm_trace, dm_log, qbit
+from scipy import linalg
 
 σx = np.matrix([[0, 1], [1, 0]])
 σy = np.matrix([[0, -1j], [1j, 0]])
@@ -199,6 +200,27 @@ def entropy(dm: DensityMatrix) -> float:
             from_eigen = -np.sum(eigen_vals * np.log(eigen_vals))
     return np.real(from_eigen)
 
+def von_neumann_entropy(dm: DensityMatrix) -> float:
+        """
+        Calculate the von Neumann entropy S = -Tr(rho log(rho)) for a density matrix.
+
+        Args:
+            rho: A numpy array representing a density matrix
+
+        Returns:
+            The von Neumann entropy as a real number
+        """
+        rho=dm.data.toarray()
+        # Get the eigenvalues of the density matrix
+        eigenvalues = linalg.eigvalsh(rho)
+
+        # Remove very small eigenvalues that might cause numerical issues
+        eigenvalues = eigenvalues[eigenvalues > 1e-10]
+
+        # Calculate entropy: -sum(λ_i * log(λ_i))
+        entropy = -np.sum(eigenvalues * np.log2(eigenvalues))
+
+        return entropy
 
 def concurrence(dm: DensityMatrix) -> float:
     """
@@ -336,6 +358,91 @@ def seven_qbit_dm_of_every_seventet(dm: DensityMatrix) -> dict:
                             for q in range(p + 1, n):
                                 everything_thats_not_system = tuple(set(range(dm.basis.num_qubits)) - {i, j, k,l,m,p,q})
                                 result[(i, j, k,l,m,p,q)] = dm.ptrace(everything_thats_not_system)
+    return result
+
+def eight_qbit_dm_of_every_octet(dm: DensityMatrix) -> dict:
+    n = dm.number_of_qbits
+    result = {}
+    for i in range(n):
+        for j in range(i + 1, n):
+            for k in range(j + 1, n):
+                for l in range(k + 1, n):
+                    for m in range(l + 1, n):
+                        for p in range(m + 1, n):
+                            for q in range(p + 1, n):
+                                for r in range(q + 1, n):
+                                    everything_thats_not_system = tuple(set(range(dm.basis.num_qubits)) - {i, j, k,l,m,p,q,r})
+                                    result[(i, j, k,l,m,p,q,r)] = dm.ptrace(everything_thats_not_system)
+    return result
+
+def nine_qbit_dm_of_every_ninetet(dm: DensityMatrix) -> dict:
+    n = dm.number_of_qbits
+    result = {}
+    for i in range(n):
+        for j in range(i + 1, n):
+            for k in range(j + 1, n):
+                for l in range(k + 1, n):
+                    for m in range(l + 1, n):
+                        for p in range(m + 1, n):
+                            for q in range(p + 1, n):
+                                for r in range(q + 1, n):
+                                    for s in range(r + 1, n):
+                                        everything_thats_not_system = tuple(set(range(dm.basis.num_qubits)) - {i, j, k,l,m,p,q,r,s})
+                                        result[(i, j, k,l,m,p,q,r,s)] = dm.ptrace(everything_thats_not_system)
+    return result
+
+def ten_qbit_dm_of_every_tentet(dm: DensityMatrix) -> dict:
+    n = dm.number_of_qbits
+    result = {}
+    for i in range(n):
+        for j in range(i + 1, n):
+            for k in range(j + 1, n):
+                for l in range(k + 1, n):
+                    for m in range(l + 1, n):
+                        for p in range(m + 1, n):
+                            for q in range(p + 1, n):
+                                for r in range(q + 1, n):
+                                    for s in range(r + 1, n):
+                                        for t in range(s + 1, n):
+                                            everything_thats_not_system = tuple(set(range(dm.basis.num_qubits)) - {i, j, k,l,m,p,q,r,s,t})
+                                            result[(i, j, k,l,m,p,q,r,s,t)] = dm.ptrace(everything_thats_not_system)
+    return result
+
+def eleven_qbit_dm_of_every_eleventet(dm: DensityMatrix) -> dict:
+    n = dm.number_of_qbits
+    result = {}
+    for i in range(n):
+        for j in range(i + 1, n):
+            for k in range(j + 1, n):
+                for l in range(k + 1, n):
+                    for m in range(l + 1, n):
+                        for p in range(m + 1, n):
+                            for q in range(p + 1, n):
+                                for r in range(q + 1, n):
+                                    for s in range(r + 1, n):
+                                        for t in range(s + 1, n):
+                                            for u in range(t + 1, n):
+                                                everything_thats_not_system = tuple(set(range(dm.basis.num_qubits)) - {i, j, k,l,m,p,q,r,s,t,u})
+                                                result[(i, j, k,l,m,p,q,r,s,t,u)] = dm.ptrace(everything_thats_not_system)
+    return result
+
+def twelve_qbit_dm_of_every_eleventet(dm: DensityMatrix) -> dict:
+    n = dm.number_of_qbits
+    result = {}
+    for i in range(n):
+        for j in range(i + 1, n):
+            for k in range(j + 1, n):
+                for l in range(k + 1, n):
+                    for m in range(l + 1, n):
+                        for p in range(m + 1, n):
+                            for q in range(p + 1, n):
+                                for r in range(q + 1, n):
+                                    for s in range(r + 1, n):
+                                        for t in range(s + 1, n):
+                                            for u in range(t + 1, n):
+                                                for v in range(u + 1, n):
+                                                    everything_thats_not_system = tuple(set(range(dm.basis.num_qubits)) - {i, j, k,l,m,p,q,r,s,t,u,v})
+                                                    result[(i, j, k,l,m,p,q,r,s,t,u,v)] = dm.ptrace(everything_thats_not_system)
     return result
 
 
