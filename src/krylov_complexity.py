@@ -11,8 +11,9 @@ class KrylovComplexity:
         # Set Hamiltonian
         self.H = hamiltonian
 
-        # Set time step
+        # Set time step interval
         self.dt = dt
+
         # Set initial operator
         self.O0 = O0
 
@@ -76,7 +77,7 @@ class KrylovComplexity:
     def compute_krylov_complexity(self, t_max, krylov_ops):
         complexity = []
         all_coefficients = []
-        current_op = self.O0
+        current_op = self.O0 
 
         for t in range(t_max + 1):
             coefficients = []
@@ -97,7 +98,6 @@ class KrylovComplexity:
         """
         Compute autocorrelation function ⟨O₀|O(t)⟩
         """
-        U = expm(-1j * self.H * self.dt)
         autocorr = []
         current_op = self.O0.copy()
 
