@@ -1,0 +1,1222 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 14.0' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     51043,       1214]
+NotebookOptionsPosition[     50690,       1200]
+NotebookOutlinePosition[     51086,       1216]
+CellTagsIndexPosition[     51043,       1213]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"(*", 
+   RowBox[{"DEFINING", " ", "OUR", " ", "FUNCTIONS"}], "*)"}], 
+  "\[IndentingNewLine]", 
+  RowBox[{"(*", 
+   RowBox[{
+    RowBox[{
+     RowBox[{
+     "These", " ", "functions", " ", "represent", " ", "pauli", " ", 
+      "strings", " ", "as", " ", "lists", " ", "of", " ", "numbers", " ", 
+      "1"}], "-", "4"}], ",", " ", 
+    RowBox[{
+     RowBox[{"where", " ", "1"}], "=", "X"}], ",", "  ", 
+    RowBox[{"2", "=", "Y"}], ",", " ", 
+    RowBox[{"3", "=", "Z"}], ",", " ", 
+    RowBox[{"4", "=", "I"}], ",", " ", 
+    RowBox[{"in", " ", "line", " ", "with", " ", 
+     RowBox[{"Mathematica", "'"}], "s", " ", "system", " ", "for", " ", "the",
+      " ", "Pauli", " ", 
+     RowBox[{"matrices", ".", " ", "This"}], " ", "function", " ", "takes", 
+     " ", "these", " ", "numbers", " ", 
+     RowBox[{"(", 
+      RowBox[{"plus", " ", "their", " ", "phase"}], ")"}], " ", "and", " ", 
+     "outputs", " ", "the", " ", "relevant", " ", "Pauli", " ", 
+     RowBox[{"matrix", "."}]}]}], "*)"}], "\[IndentingNewLine]", 
+  RowBox[{
+   RowBox[{
+    RowBox[{"pauliMatrixfromNum", "[", "num_", "]"}], ":=", 
+    RowBox[{"Module", "[", 
+     RowBox[{
+      RowBox[{"{", 
+       RowBox[{
+       "a", ",", "b", ",", "c", ",", "phase", ",", "matrix", ",", "result"}], 
+       "}"}], ",", "\[IndentingNewLine]", 
+      RowBox[{
+       RowBox[{"a", "=", "0"}], ";", "\[IndentingNewLine]", 
+       RowBox[{"If", "[", " ", 
+        RowBox[{
+         RowBox[{
+          RowBox[{"RealValuedNumberQ", "[", "num", "]"}], "==", "False"}], 
+         ",", 
+         RowBox[{"a", " ", "+=", "1"}]}], "]"}], ";", "\[IndentingNewLine]", 
+       RowBox[{"If", "[", 
+        RowBox[{
+         RowBox[{"a", "==", "1"}], ",", " ", 
+         RowBox[{"b", "=", 
+          RowBox[{"num", "/", "\[ImaginaryI]"}]}], ",", " ", 
+         RowBox[{"b", "=", "num"}]}], "]"}], ";", "\[IndentingNewLine]", 
+       RowBox[{"c", "=", "1"}], ";", "\[IndentingNewLine]", 
+       RowBox[{"If", "[", 
+        RowBox[{
+         RowBox[{"b", "<", "0"}], ",", " ", 
+         RowBox[{"c", "=", 
+          RowBox[{"-", "c"}]}]}], "]"}], ";", "\[IndentingNewLine]", 
+       RowBox[{"phase", " ", "=", " ", 
+        RowBox[{"c", " ", "*", " ", 
+         SuperscriptBox["\[ImaginaryI]", "a"]}]}], ";", "\[IndentingNewLine]", 
+       RowBox[{"result", " ", "=", " ", 
+        RowBox[{"phase", " ", "*", " ", 
+         RowBox[{"PauliMatrix", "[", 
+          RowBox[{"num", "/", "phase"}], "]"}]}]}]}]}], "]"}]}], 
+   "\[IndentingNewLine]", "\[IndentingNewLine]", 
+   RowBox[{"(*", 
+    RowBox[{
+     RowBox[{
+     "This", " ", "function", " ", "takes", " ", "the", " ", "application", 
+      " ", "of", " ", "a", " ", "2", " ", "qubit", " ", "clifford", " ", 
+      "gate", " ", "to", " ", "a", " ", "2", " ", "pauli", " ", "string"}], 
+     ",", " ", 
+     RowBox[{
+     "and", " ", "outputs", " ", "the", " ", "pauli", " ", "string", " ", 
+      "that", " ", "comes", " ", "out", " ", 
+      RowBox[{"(", 
+       RowBox[{"along", " ", "with", " ", "its", " ", "phase"}], ")"}], " ", 
+      "in", " ", "a", " ", "list"}]}], " ", "*)"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{"which2PauliString", "[", 
+     RowBox[{"CNOT_", ",", "Pauli1_", ",", "Pauli2_"}], "]"}], ":=", 
+    RowBox[{"Module", "[", 
+     RowBox[{
+      RowBox[{"{", 
+       RowBox[{"result", ",", "Pauli"}], "}"}], ",", "\[IndentingNewLine]", 
+      RowBox[{
+       RowBox[{"Pauli", " ", "=", " ", 
+        RowBox[{"KroneckerProduct", "[", 
+         RowBox[{
+          RowBox[{"pauliMatrixfromNum", "[", "Pauli1", "]"}], ",", 
+          RowBox[{"pauliMatrixfromNum", "[", "Pauli2", "]"}]}], "]"}]}], ";", 
+       "\[IndentingNewLine]", 
+       RowBox[{"For", "[", 
+        RowBox[{
+         RowBox[{"i", "=", "1"}], ",", " ", 
+         RowBox[{"i", " ", "<", " ", "5"}], ",", " ", 
+         RowBox[{"i", "++"}], ",", "\[IndentingNewLine]", 
+         RowBox[{"For", "[", 
+          RowBox[{
+           RowBox[{"j", "=", "1"}], ",", 
+           RowBox[{"j", "<", "5"}], ",", 
+           RowBox[{"j", "++"}], ",", "\[IndentingNewLine]", 
+           RowBox[{
+            RowBox[{"If", "[", 
+             RowBox[{
+              RowBox[{
+               RowBox[{"CNOT", ".", "Pauli", ".", 
+                RowBox[{"ConjugateTranspose", "[", "CNOT", "]"}]}], " ", "==",
+                " ", 
+               RowBox[{"KroneckerProduct", "[", 
+                RowBox[{
+                 RowBox[{"PauliMatrix", "[", "i", "]"}], ",", 
+                 RowBox[{"PauliMatrix", "[", "j", "]"}]}], "]"}]}], ",", " ", 
+              
+              RowBox[{"result", "=", 
+               RowBox[{"{", 
+                RowBox[{"i", ",", "j", ",", "1"}], "}"}]}]}], "]"}], ";", 
+            "\[IndentingNewLine]", 
+            RowBox[{"If", "[", 
+             RowBox[{
+              RowBox[{
+               RowBox[{"CNOT", ".", "Pauli", ".", 
+                RowBox[{"ConjugateTranspose", "[", "CNOT", "]"}]}], " ", "==",
+                " ", 
+               RowBox[{"-", 
+                RowBox[{"KroneckerProduct", "[", 
+                 RowBox[{
+                  RowBox[{"PauliMatrix", "[", "i", "]"}], ",", 
+                  RowBox[{"PauliMatrix", "[", "j", "]"}]}], "]"}]}]}], ",", 
+              RowBox[{"result", "=", 
+               RowBox[{"{", 
+                RowBox[{"i", ",", "j", ",", 
+                 RowBox[{"-", "1"}]}], "}"}]}]}], "]"}], ";", 
+            "\[IndentingNewLine]", 
+            RowBox[{"If", "[", 
+             RowBox[{
+              RowBox[{
+               RowBox[{"CNOT", ".", "Pauli", ".", 
+                RowBox[{"ConjugateTranspose", "[", "CNOT", "]"}]}], " ", "==",
+                " ", 
+               RowBox[{"\[ImaginaryI]", " ", 
+                RowBox[{"KroneckerProduct", "[", 
+                 RowBox[{
+                  RowBox[{"PauliMatrix", "[", "i", "]"}], ",", 
+                  RowBox[{"PauliMatrix", "[", "j", "]"}]}], "]"}]}]}], ",", 
+              RowBox[{"result", "=", 
+               RowBox[{"{", 
+                RowBox[{"i", ",", "j", ",", "\[ImaginaryI]"}], "}"}]}]}], 
+             "]"}], ";", "\[IndentingNewLine]", 
+            RowBox[{"If", "[", 
+             RowBox[{
+              RowBox[{
+               RowBox[{"CNOT", ".", "Pauli", ".", 
+                RowBox[{"ConjugateTranspose", "[", "CNOT", "]"}]}], " ", "==",
+                " ", 
+               RowBox[{
+                RowBox[{"-", "\[ImaginaryI]"}], " ", 
+                RowBox[{"KroneckerProduct", "[", 
+                 RowBox[{
+                  RowBox[{"PauliMatrix", "[", "i", "]"}], ",", 
+                  RowBox[{"PauliMatrix", "[", "j", "]"}]}], "]"}]}]}], ",", 
+              RowBox[{"result", "=", 
+               RowBox[{"{", 
+                RowBox[{"i", ",", "j", ",", 
+                 RowBox[{"-", "\[ImaginaryI]"}]}], "}"}]}]}], "]"}]}]}], 
+          "]"}]}], "\[IndentingNewLine]", "]"}], ";", "\[IndentingNewLine]", 
+       "\[IndentingNewLine]", "result"}]}], "]"}]}], "\[IndentingNewLine]", 
+   "\[IndentingNewLine]", "\[IndentingNewLine]", 
+   RowBox[{"(*", 
+    RowBox[{
+     RowBox[{
+     "This", " ", "function", " ", "randomly", " ", "generates", " ", "a", 
+      " ", "two", " ", "layer", " ", "brickwork", " ", "of", " ", "gates", 
+      " ", "for", " ", "a", " ", "given", " ", "size", " ", "of", " ", 
+      "circuit"}], ",", " ", 
+     RowBox[{
+     "and", " ", "then", " ", "applies", " ", "it", " ", "for", " ", "the", 
+      " ", "given", " ", "number", " ", "of", " ", "circuit", " ", 
+      RowBox[{
+      "layers", ".", " ", "\[IndentingNewLine]", "\[IndentingNewLine]", 
+       "This"}], " ", "also", " ", "allows", " ", "you", " ", "to", " ", 
+      "affect", " ", "the", " ", "chance", " ", "of", " ", "the", " ", 
+      "brickwork", " ", "generation", " ", "selecting", " ", "a", " ", "2", 
+      " ", "qubit", " ", "gate", " ", 
+      RowBox[{"vs", ".", " ", "a"}], " ", "tensor", " ", "product", " ", "of",
+       " ", "a", " ", "pair", " ", "of", " ", "one", " ", "qubit", " ", 
+      RowBox[{"gates", "."}]}]}], " ", "*)"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{"cliffordKrylovSimSetBrickwork", "[", 
+     RowBox[{"qubitnum_", ",", " ", "layer_", ",", "twogatelikelihood_"}], 
+     "]"}], ":=", 
+    RowBox[{"Module", "[", 
+     RowBox[{
+      RowBox[{"{", 
+       RowBox[{
+       "twogatelist", ",", "gaterule", ",", " ", "result", ",", "C1", ",", 
+        "C2", ",", "C3", ",", "C4", ",", "C5", ",", "C6", ",", "X", ",", "Y", 
+        ",", "Z", ",", "Id", ",", "RX", ",", "RY", ",", "S", ",", "H", ",", 
+        "\[Theta]", ",", "\[CapitalGamma]", ",", "SW", ",", "onegatelist", 
+        ",", " ", "state", ",", "phase", ",", "firststepgates", ",", 
+        "oneortwo", ",", "secondstepgates", ",", "a", ",", "finalphase", ",", 
+        "newpair1", ",", "newpair2", ",", "newpair3", ",", "gate"}], "}"}], 
+      ",", "\[IndentingNewLine]", 
+      RowBox[{"(*", 
+       RowBox[{"Defining", " ", "One", " ", "qubit", " ", "Gates"}], "*)"}], 
+      "\[IndentingNewLine]", 
+      RowBox[{
+       RowBox[{"X", " ", "=", " ", 
+        RowBox[{"PauliMatrix", "[", "1", "]"}]}], ";", "\[IndentingNewLine]", 
+       
+       RowBox[{"Y", "=", " ", 
+        RowBox[{"PauliMatrix", "[", "2", "]"}]}], ";", "\[IndentingNewLine]", 
+       
+       RowBox[{"Z", "=", 
+        RowBox[{"PauliMatrix", "[", "3", "]"}]}], ";", "\[IndentingNewLine]", 
+       
+       RowBox[{"Id", " ", "=", " ", 
+        RowBox[{"PauliMatrix", "[", "4", "]"}]}], ";", "\[IndentingNewLine]", 
+       
+       RowBox[{"RX", " ", "=", " ", 
+        RowBox[{
+         FractionBox["1", 
+          RowBox[{"Sqrt", "[", "2", "]"}]], 
+         RowBox[{"{", 
+          RowBox[{
+           RowBox[{"{", 
+            RowBox[{"1", ",", 
+             RowBox[{"-", "\[ImaginaryI]"}]}], "}"}], ",", 
+           RowBox[{"{", 
+            RowBox[{
+             RowBox[{"-", "\[ImaginaryI]"}], ",", "1"}], "}"}]}], "}"}]}]}], 
+       ";", "\[IndentingNewLine]", 
+       RowBox[{"RY", "=", 
+        RowBox[{
+         FractionBox["1", 
+          RowBox[{"Sqrt", "[", "2", "]"}]], 
+         RowBox[{"{", 
+          RowBox[{
+           RowBox[{"{", 
+            RowBox[{"1", ",", 
+             RowBox[{"-", "1"}]}], "}"}], ",", 
+           RowBox[{"{", 
+            RowBox[{"1", ",", "1"}], "}"}]}], "}"}]}]}], ";", 
+       "\[IndentingNewLine]", 
+       RowBox[{"S", " ", "=", 
+        RowBox[{
+         FractionBox[
+          RowBox[{"1", "-", "\[ImaginaryI]"}], 
+          RowBox[{"Sqrt", "[", "2", "]"}]], 
+         RowBox[{"{", 
+          RowBox[{
+           RowBox[{"{", 
+            RowBox[{"1", ",", "0"}], "}"}], ",", 
+           RowBox[{"{", 
+            RowBox[{"0", ",", "\[ImaginaryI]"}], "}"}]}], "}"}]}]}], ";", 
+       "\[IndentingNewLine]", 
+       RowBox[{"H", "=", 
+        RowBox[{
+         FractionBox["1", 
+          RowBox[{"Sqrt", "[", "2", "]"}]], 
+         RowBox[{"{", 
+          RowBox[{
+           RowBox[{"{", 
+            RowBox[{"1", ",", "1"}], "}"}], ",", 
+           RowBox[{"{", 
+            RowBox[{"1", ",", 
+             RowBox[{"-", "1"}]}], "}"}]}], "}"}]}]}], ";", 
+       "\[IndentingNewLine]", 
+       RowBox[{"\[Theta]", "=", 
+        RowBox[{
+         FractionBox["1", 
+          RowBox[{"Sqrt", "[", "2", "]"}]], 
+         RowBox[{"{", 
+          RowBox[{
+           RowBox[{"{", 
+            RowBox[{
+             RowBox[{"-", "1"}], ",", "1"}], "}"}], ",", 
+           RowBox[{"{", 
+            RowBox[{"1", ",", "1"}], "}"}]}], "}"}]}]}], ";", 
+       "\[IndentingNewLine]", 
+       RowBox[{"\[CapitalGamma]", "=", 
+        RowBox[{
+         FractionBox[
+          RowBox[{"1", "-", "\[ImaginaryI]"}], "2"], 
+         RowBox[{"{", 
+          RowBox[{
+           RowBox[{"{", 
+            RowBox[{"1", ",", 
+             RowBox[{"-", "\[ImaginaryI]"}]}], "}"}], ",", 
+           RowBox[{"{", 
+            RowBox[{"1", ",", "\[ImaginaryI]"}], "}"}]}], "}"}]}]}], ";", 
+       "\[IndentingNewLine]", "\[IndentingNewLine]", 
+       RowBox[{"(*", 
+        RowBox[{
+         RowBox[{"List", " ", "of", " ", "one", " ", "qubit", " ", "gates"}], 
+         ",", " ", 
+         RowBox[{
+         "remove", " ", "from", " ", "this", " ", "list", " ", "if", " ", 
+          "you", " ", "want", " ", "to", " ", "affect", " ", "the", " ", 
+          "available", " ", "pool", " ", "the", " ", "brickwork", " ", 
+          "generation", " ", "is", " ", "selecting", " ", "from"}]}], "*)"}], 
+       "\[IndentingNewLine]", 
+       RowBox[{"onegatelist", "=", " ", 
+        RowBox[{"{", 
+         RowBox[{
+         "X", ",", "Y", ",", "Z", ",", "S", ",", "H", ",", "\[Theta]", ",", 
+          "RX", ",", "RY", ",", "Id", ",", "\[CapitalGamma]"}], "}"}]}], ";", 
+       "\[IndentingNewLine]", "\[IndentingNewLine]", 
+       RowBox[{"(*", 
+        RowBox[{"Defining", " ", "two", " ", "qubit", " ", "gates"}], "*)"}], 
+       "\[IndentingNewLine]", 
+       RowBox[{"C1", " ", "=", " ", 
+        RowBox[{
+         FractionBox["1", "2"], 
+         RowBox[{"{", 
+          RowBox[{
+           RowBox[{"{", 
+            RowBox[{"1", ",", "1", ",", "1", ",", 
+             RowBox[{"-", "1"}]}], "}"}], ",", 
+           RowBox[{"{", 
+            RowBox[{"1", ",", "1", ",", 
+             RowBox[{"-", "1"}], ",", "1"}], "}"}], ",", 
+           RowBox[{"{", 
+            RowBox[{"1", ",", 
+             RowBox[{"-", "1"}], ",", "1", ",", "1"}], "}"}], ",", 
+           RowBox[{"{", 
+            RowBox[{
+             RowBox[{"-", "1"}], ",", "1", ",", "1", ",", "1"}], "}"}]}], 
+          "}"}]}]}], ";", "\[IndentingNewLine]", 
+       RowBox[{"C2", " ", "=", " ", 
+        RowBox[{
+         FractionBox["1", "2"], 
+         RowBox[{"{", 
+          RowBox[{
+           RowBox[{"{", 
+            RowBox[{"1", ",", 
+             RowBox[{"-", "\[ImaginaryI]"}], ",", 
+             RowBox[{"-", "\[ImaginaryI]"}], ",", "1"}], "}"}], ",", 
+           RowBox[{"{", 
+            RowBox[{"\[ImaginaryI]", ",", "1", ",", 
+             RowBox[{"-", "1"}], ",", 
+             RowBox[{"-", "\[ImaginaryI]"}]}], "}"}], ",", 
+           RowBox[{"{", 
+            RowBox[{"\[ImaginaryI]", ",", 
+             RowBox[{"-", "1"}], ",", "1", ",", 
+             RowBox[{"-", "\[ImaginaryI]"}]}], "}"}], ",", 
+           RowBox[{"{", 
+            RowBox[{
+            "1", ",", "\[ImaginaryI]", ",", "\[ImaginaryI]", ",", "1"}], 
+            "}"}]}], "}"}]}]}], ";", "\[IndentingNewLine]", 
+       RowBox[{"C3", " ", "=", " ", 
+        RowBox[{"{", 
+         RowBox[{
+          RowBox[{"{", 
+           RowBox[{"1", ",", "0", ",", "0", ",", "0"}], "}"}], ",", 
+          RowBox[{"{", 
+           RowBox[{"0", ",", "1", ",", "0", ",", "0"}], "}"}], ",", 
+          RowBox[{"{", 
+           RowBox[{"0", ",", "0", ",", "1", ",", "0"}], "}"}], ",", 
+          RowBox[{"{", 
+           RowBox[{"0", ",", "0", ",", "0", ",", 
+            RowBox[{"-", "1"}]}], "}"}]}], "}"}]}], ";", 
+       "\[IndentingNewLine]", 
+       RowBox[{"C4", " ", "=", " ", 
+        RowBox[{
+         FractionBox["1", "2"], 
+         RowBox[{"{", 
+          RowBox[{
+           RowBox[{"{", 
+            RowBox[{"1", ",", "1", ",", 
+             RowBox[{"-", "\[ImaginaryI]"}], ",", "\[ImaginaryI]"}], "}"}], 
+           ",", 
+           RowBox[{"{", 
+            RowBox[{"1", ",", "1", ",", "\[ImaginaryI]", ",", 
+             RowBox[{"-", "\[ImaginaryI]"}]}], "}"}], ",", 
+           RowBox[{"{", 
+            RowBox[{"\[ImaginaryI]", ",", 
+             RowBox[{"-", "\[ImaginaryI]"}], ",", "1", ",", "1"}], "}"}], ",", 
+           RowBox[{"{", 
+            RowBox[{
+             RowBox[{"-", "\[ImaginaryI]"}], ",", "\[ImaginaryI]", ",", "1", 
+             ",", "1"}], "}"}]}], "}"}]}]}], ";", "\[IndentingNewLine]", 
+       RowBox[{"C5", " ", "=", " ", 
+        RowBox[{"{", 
+         RowBox[{
+          RowBox[{"{", 
+           RowBox[{"1", ",", "0", ",", "0", ",", "0"}], "}"}], ",", 
+          RowBox[{"{", 
+           RowBox[{"0", ",", "1", ",", "0", ",", "0"}], "}"}], ",", 
+          RowBox[{"{", 
+           RowBox[{"0", ",", "0", ",", "0", ",", 
+            RowBox[{"-", "\[ImaginaryI]"}]}], "}"}], ",", 
+          RowBox[{"{", 
+           RowBox[{"0", ",", "0", ",", "\[ImaginaryI]", ",", "0"}], "}"}]}], 
+         "}"}]}], ";", "\[IndentingNewLine]", 
+       RowBox[{"C6", " ", "=", 
+        RowBox[{"{", 
+         RowBox[{
+          RowBox[{"{", 
+           RowBox[{"1", ",", "0", ",", "0", ",", "0"}], "}"}], ",", 
+          RowBox[{"{", 
+           RowBox[{"0", ",", "0", ",", "0", ",", "1"}], "}"}], ",", 
+          RowBox[{"{", 
+           RowBox[{"0", ",", "0", ",", "1", ",", "0"}], "}"}], ",", 
+          RowBox[{"{", 
+           RowBox[{"0", ",", "1", ",", "0", ",", "0"}], "}"}]}], "}"}]}], ";",
+        "\[IndentingNewLine]", 
+       RowBox[{"SW", " ", "=", " ", 
+        RowBox[{"{", 
+         RowBox[{
+          RowBox[{"{", 
+           RowBox[{"1", ",", "0", ",", "0", ",", "0"}], "}"}], ",", 
+          RowBox[{"{", 
+           RowBox[{"0", ",", "0", ",", "1", ",", "0"}], "}"}], ",", 
+          RowBox[{"{", 
+           RowBox[{"0", ",", "1", ",", "0", ",", "0"}], "}"}], ",", 
+          RowBox[{"{", 
+           RowBox[{"0", ",", "0", ",", "0", ",", "1"}], "}"}]}], "}"}]}], ";",
+        "\[IndentingNewLine]", "\[IndentingNewLine]", 
+       RowBox[{"(*", 
+        RowBox[{
+         RowBox[{"List", " ", "of", " ", "two", " ", "qubit", " ", "gates"}], 
+         ",", " ", 
+         RowBox[{
+         "remove", " ", "from", " ", "this", " ", "list", " ", "if", " ", 
+          "you", " ", "want", " ", "to", " ", "affect", " ", "the", " ", 
+          "available", " ", "pool", " ", "the", " ", "brickwork", " ", 
+          "generation", " ", "is", " ", "selecting", " ", "from"}]}], "*)"}], 
+       "\[IndentingNewLine]", 
+       RowBox[{"twogatelist", " ", "=", " ", 
+        RowBox[{"{", 
+         RowBox[{
+         "C1", ",", "C2", ",", "C3", ",", "C4", ",", "C5", ",", "C6", ",", 
+          "SW"}], "}"}]}], ";", "\[IndentingNewLine]", "\[IndentingNewLine]", 
+       "\[IndentingNewLine]", 
+       RowBox[{"(*", 
+        RowBox[{"Initializing", " ", "the", " ", "operator"}], "*)"}], 
+       "\[IndentingNewLine]", 
+       RowBox[{"state", " ", "=", " ", 
+        RowBox[{"{", "3", "}"}]}], ";", "\[IndentingNewLine]", 
+       RowBox[{"For", "[", 
+        RowBox[{
+         RowBox[{"i", "=", "1"}], ",", 
+         RowBox[{"i", "<", "qubitnum"}], ",", " ", 
+         RowBox[{"i", "++"}], ",", "\[IndentingNewLine]", 
+         RowBox[{"AppendTo", "[", 
+          RowBox[{"state", ",", " ", "4"}], "]"}]}], "]"}], ";", 
+       "\[IndentingNewLine]", "\[IndentingNewLine]", "\[IndentingNewLine]", 
+       RowBox[{"(*", 
+        RowBox[{"Developing", " ", "random", " ", "Brickwork"}], "*)"}], 
+       "\[IndentingNewLine]", 
+       RowBox[{"firststepgates", " ", "=", " ", 
+        RowBox[{"{", "}"}]}], ";", "\[IndentingNewLine]", 
+       RowBox[{"For", "[", 
+        RowBox[{
+         RowBox[{"i", "=", "1"}], ",", " ", 
+         RowBox[{"i", "\[LessEqual]", 
+          RowBox[{"qubitnum", "/", "2"}]}], ",", " ", 
+         RowBox[{"i", "++"}], ",", "\[IndentingNewLine]", 
+         RowBox[{
+          RowBox[{"oneortwo", " ", "=", " ", 
+           RowBox[{"RandomChoice", "[", 
+            RowBox[{
+             RowBox[{"{", 
+              RowBox[{
+               RowBox[{"1", "-", "twogatelikelihood"}], ",", 
+               "twogatelikelihood"}], "}"}], "->", " ", 
+             RowBox[{"{", 
+              RowBox[{"1", ",", "2"}], "}"}]}], "]"}]}], ";", 
+          "\[IndentingNewLine]", 
+          RowBox[{"If", " ", "[", 
+           RowBox[{
+            RowBox[{"oneortwo", " ", "==", " ", "1"}], ",", 
+            RowBox[{"gate", "=", " ", 
+             RowBox[{"KroneckerProduct", "[", 
+              RowBox[{
+               RowBox[{"RandomChoice", "[", "onegatelist", "]"}], ",", 
+               RowBox[{"RandomChoice", "[", "onegatelist", "]"}]}], "]"}]}]}],
+            "]"}], ";", "\[IndentingNewLine]", 
+          RowBox[{"If", "[", 
+           RowBox[{
+            RowBox[{"oneortwo", " ", "==", "2"}], ",", " ", 
+            RowBox[{"gate", " ", "=", " ", 
+             RowBox[{"RandomChoice", "[", "twogatelist", "]"}]}]}], "]"}], 
+          ";", "\[IndentingNewLine]", 
+          RowBox[{"AppendTo", "[", 
+           RowBox[{"firststepgates", ",", " ", "gate"}], "]"}]}]}], "]"}], 
+       ";", "\[IndentingNewLine]", 
+       RowBox[{"secondstepgates", " ", "=", " ", 
+        RowBox[{"{", "}"}]}], ";", "\[IndentingNewLine]", 
+       RowBox[{"For", "[", 
+        RowBox[{
+         RowBox[{"i", "=", "1"}], ",", " ", 
+         RowBox[{"i", "\[LessEqual]", 
+          RowBox[{"qubitnum", "/", "2"}]}], ",", " ", 
+         RowBox[{"i", "++"}], ",", "\[IndentingNewLine]", 
+         RowBox[{
+          RowBox[{"oneortwo", " ", "=", " ", 
+           RowBox[{"RandomChoice", "[", 
+            RowBox[{
+             RowBox[{"{", 
+              RowBox[{
+               RowBox[{"1", "-", "twogatelikelihood"}], ",", 
+               "twogatelikelihood"}], "}"}], "->", " ", 
+             RowBox[{"{", 
+              RowBox[{"1", ",", "2"}], "}"}]}], "]"}]}], ";", 
+          "\[IndentingNewLine]", 
+          RowBox[{"If", " ", "[", 
+           RowBox[{
+            RowBox[{"oneortwo", " ", "==", " ", "1"}], ",", " ", 
+            RowBox[{"gate", "=", " ", 
+             RowBox[{"KroneckerProduct", "[", 
+              RowBox[{
+               RowBox[{"RandomChoice", "[", "onegatelist", "]"}], ",", 
+               RowBox[{"RandomChoice", "[", "onegatelist", "]"}]}], "]"}]}]}],
+            "]"}], ";", "\[IndentingNewLine]", 
+          RowBox[{"If", "[", 
+           RowBox[{
+            RowBox[{"oneortwo", " ", "==", "2"}], ",", " ", 
+            RowBox[{"gate", " ", "=", " ", 
+             RowBox[{"RandomChoice", "[", "twogatelist", "]"}]}]}], "]"}], 
+          ";", "\[IndentingNewLine]", 
+          RowBox[{"AppendTo", "[", 
+           RowBox[{"secondstepgates", ",", " ", "gate"}], "]"}]}]}], "]"}], 
+       ";", "\[IndentingNewLine]", "\[IndentingNewLine]", 
+       RowBox[{"(*", 
+        RowBox[{"Printing", " ", "defined", " ", "brickwork"}], "*)"}], 
+       "\[IndentingNewLine]", 
+       RowBox[{"Print", "[", 
+        RowBox[{"\"\<First Gate Pass: \>\"", ",", 
+         RowBox[{"MatrixForm", "[", "firststepgates", "]"}]}], "]"}], ";", 
+       "\[IndentingNewLine]", 
+       RowBox[{"Print", "[", 
+        RowBox[{"\"\<Second Gate Pass: \>\"", ",", " ", 
+         RowBox[{"MatrixForm", "[", "secondstepgates", "]"}]}], "]"}], ";", 
+       "\[IndentingNewLine]", "\[IndentingNewLine]", 
+       RowBox[{"(*", 
+        RowBox[{"Saving", " ", "initial", " ", "state"}], "*)"}], 
+       "\[IndentingNewLine]", 
+       RowBox[{"result", "=", 
+        RowBox[{"{", "}"}]}], ";", "\[IndentingNewLine]", 
+       RowBox[{"AppendTo", "[", 
+        RowBox[{"result", ",", " ", "state"}], "]"}], ";", 
+       "\[IndentingNewLine]", "\[IndentingNewLine]", 
+       RowBox[{"(*", 
+        RowBox[{"Running", " ", "Simulation"}], "*)"}], "\[IndentingNewLine]", 
+       RowBox[{"Do", "[", "\[IndentingNewLine]", 
+        RowBox[{"(*", 
+         RowBox[{
+          RowBox[{"Applying", " ", "first", " ", "layer"}], ",", " ", 
+          RowBox[{"even", " ", "pairs"}]}], "*)"}], "\[IndentingNewLine]", 
+        RowBox[{
+         RowBox[{
+          RowBox[{"Do", "[", 
+           RowBox[{
+            RowBox[{
+             RowBox[{"newpair1", " ", "=", " ", 
+              RowBox[{"which2PauliString", "[", 
+               RowBox[{
+                RowBox[{"firststepgates", "[", 
+                 RowBox[{"[", 
+                  RowBox[{"Quotient", "[", 
+                   RowBox[{
+                    RowBox[{"m", "+", "1"}], ",", "2"}], "]"}], "]"}], "]"}], 
+                ",", 
+                RowBox[{"state", "[", 
+                 RowBox[{"[", "m", "]"}], "]"}], ",", 
+                RowBox[{"state", "[", 
+                 RowBox[{"[", 
+                  RowBox[{"m", "+", "1"}], "]"}], "]"}]}], "]"}]}], ";", "\n",
+              "\[IndentingNewLine]", 
+             RowBox[{
+              RowBox[{"state", "[", 
+               RowBox[{"[", "m", "]"}], "]"}], "=", 
+              RowBox[{
+               RowBox[{"newpair1", "[", 
+                RowBox[{"[", "1", "]"}], "]"}], "*", 
+               RowBox[{"newpair1", "[", 
+                RowBox[{"[", "3", "]"}], "]"}]}]}], ";", 
+             "\[IndentingNewLine]", "\[IndentingNewLine]", 
+             RowBox[{
+              RowBox[{"state", "[", 
+               RowBox[{"[", 
+                RowBox[{"m", "+", "1"}], "]"}], "]"}], "=", 
+              RowBox[{
+               RowBox[{"newpair1", "[", 
+                RowBox[{"[", "2", "]"}], "]"}], "*", 
+               RowBox[{"newpair1", "[", 
+                RowBox[{"[", "3", "]"}], "]"}]}]}], ";"}], ",", 
+            "\[IndentingNewLine]", 
+            RowBox[{"{", 
+             RowBox[{"m", ",", "1", ",", 
+              RowBox[{
+               RowBox[{"Length", "[", "state", "]"}], "-", "1"}], ",", "2"}], 
+             "}"}]}], "]"}], ";", "\[IndentingNewLine]", 
+          RowBox[{"AppendTo", "[", 
+           RowBox[{"result", ",", "state"}], "]"}], ";", 
+          "\[IndentingNewLine]", "\[IndentingNewLine]", 
+          RowBox[{"(*", 
+           RowBox[{
+            RowBox[{"Applying", " ", "second", " ", "layer"}], ",", " ", 
+            RowBox[{"odd", " ", "pairs"}]}], "*)"}], "\[IndentingNewLine]", 
+          RowBox[{"Do", "[", 
+           RowBox[{
+            RowBox[{
+             RowBox[{"newpair2", " ", "=", " ", 
+              RowBox[{"which2PauliString", "[", 
+               RowBox[{
+                RowBox[{"secondstepgates", "[", 
+                 RowBox[{"[", 
+                  RowBox[{"Quotient", "[", 
+                   RowBox[{"k", ",", "2"}], "]"}], "]"}], "]"}], ",", 
+                RowBox[{"state", "[", 
+                 RowBox[{"[", "k", "]"}], "]"}], ",", 
+                RowBox[{"state", "[", 
+                 RowBox[{"[", 
+                  RowBox[{"k", "+", "1"}], "]"}], "]"}]}], "]"}]}], ";", 
+             "\[IndentingNewLine]", "\[IndentingNewLine]", 
+             RowBox[{
+              RowBox[{"state", "[", 
+               RowBox[{"[", "k", "]"}], "]"}], "=", 
+              RowBox[{
+               RowBox[{"newpair2", "[", 
+                RowBox[{"[", "1", "]"}], "]"}], "*", 
+               RowBox[{"newpair2", "[", 
+                RowBox[{"[", "3", "]"}], "]"}]}]}], ";", 
+             "\[IndentingNewLine]", "\[IndentingNewLine]", 
+             RowBox[{
+              RowBox[{"state", "[", 
+               RowBox[{"[", 
+                RowBox[{"k", "+", "1"}], "]"}], "]"}], "=", 
+              RowBox[{
+               RowBox[{"newpair2", "[", 
+                RowBox[{"[", "2", "]"}], "]"}], "*", 
+               RowBox[{"newpair2", "[", 
+                RowBox[{"[", "3", "]"}], "]"}]}]}], ";"}], ",", 
+            "\[IndentingNewLine]", 
+            RowBox[{"{", 
+             RowBox[{"k", ",", "2", ",", 
+              RowBox[{
+               RowBox[{"Length", "[", "state", "]"}], "-", "1"}], ",", "2"}], 
+             "}"}]}], "]"}], ";", "\[IndentingNewLine]", 
+          "\[IndentingNewLine]", 
+          RowBox[{"(*", 
+           RowBox[{
+           "Wrapping", " ", "last", " ", "qubit", " ", "to", " ", "first", 
+            " ", "qubit", " ", "with", " ", "odd", " ", "gates"}], "*)"}], 
+          "\[IndentingNewLine]", 
+          RowBox[{"newpair3", "=", 
+           RowBox[{"which2PauliString", "[", 
+            RowBox[{
+             RowBox[{"Last", "[", "secondstepgates", "]"}], ",", 
+             RowBox[{"Last", "[", "state", "]"}], ",", 
+             RowBox[{"First", "[", "state", "]"}]}], "]"}]}], ";", 
+          "\[IndentingNewLine]", 
+          RowBox[{
+           RowBox[{"state", "[", 
+            RowBox[{"[", "qubitnum", "]"}], "]"}], " ", "=", " ", 
+           RowBox[{
+            RowBox[{"newpair3", "[", 
+             RowBox[{"[", "1", "]"}], "]"}], "*", 
+            RowBox[{"newpair3", "[", 
+             RowBox[{"[", "3", "]"}], "]"}]}]}], ";", "\[IndentingNewLine]", 
+          RowBox[{
+           RowBox[{"state", "[", 
+            RowBox[{"[", "1", "]"}], "]"}], "=", 
+           RowBox[{
+            RowBox[{"newpair3", "[", 
+             RowBox[{"[", "2", "]"}], "]"}], "*", 
+            RowBox[{"newpair3", "[", 
+             RowBox[{"[", "3", "]"}], "]"}]}]}], ";", "\[IndentingNewLine]", 
+          "\[IndentingNewLine]", "\[IndentingNewLine]", 
+          RowBox[{"AppendTo", "[", 
+           RowBox[{"result", ",", "state"}], "]"}], ";"}], ",", 
+         "\[IndentingNewLine]", 
+         RowBox[{"{", 
+          RowBox[{"l", ",", "1", ",", "layer"}], "}"}]}], "]"}], ";", 
+       "\[IndentingNewLine]", "\[IndentingNewLine]", 
+       RowBox[{"ArrayPlot", "[", 
+        RowBox[{
+         FractionBox["1", "4"], "result"}], "]"}]}]}], "]"}]}], 
+   "\[IndentingNewLine]", "\[IndentingNewLine]", "\[IndentingNewLine]", 
+   RowBox[{"(*", 
+    RowBox[{"Random", " ", "Brickwork", " ", "Circuit"}], "*)"}], 
+   "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{"cliffordKrylovSimRandomBrickwork", "[", 
+     RowBox[{"qubitnum_", ",", " ", "layer_", ",", "twogatelikelihood_"}], 
+     "]"}], ":=", 
+    RowBox[{"Module", "[", 
+     RowBox[{
+      RowBox[{"{", 
+       RowBox[{
+       "twogatelist", ",", "gaterule", ",", " ", "result", ",", "C1", ",", 
+        "C2", ",", "C3", ",", "C4", ",", "C5", ",", "C6", ",", "X", ",", "Y", 
+        ",", "Z", ",", "Id", ",", "RX", ",", "RY", ",", "S", ",", "H", ",", 
+        "\[Theta]", ",", "\[CapitalGamma]", ",", "SW", ",", "onegatelist", 
+        ",", " ", "state", ",", "phase", ",", "firststepgates", ",", 
+        "oneortwo", ",", "secondstepgates", ",", "a", ",", "finalphase", ",", 
+        "newpair1", ",", "newpair2", ",", " ", "newpair3", ",", "gate"}], 
+       "}"}], ",", "\[IndentingNewLine]", 
+      RowBox[{"(*", 
+       RowBox[{"Defining", " ", "one", " ", "qubit", " ", "gates"}], "*)"}], 
+      "\[IndentingNewLine]", 
+      RowBox[{
+       RowBox[{"X", " ", "=", " ", 
+        RowBox[{"PauliMatrix", "[", "1", "]"}]}], ";", "\[IndentingNewLine]", 
+       
+       RowBox[{"Y", "=", " ", 
+        RowBox[{"PauliMatrix", "[", "2", "]"}]}], ";", "\[IndentingNewLine]", 
+       
+       RowBox[{"Z", "=", 
+        RowBox[{"PauliMatrix", "[", "3", "]"}]}], ";", "\[IndentingNewLine]", 
+       
+       RowBox[{"Id", " ", "=", " ", 
+        RowBox[{"PauliMatrix", "[", "4", "]"}]}], ";", "\[IndentingNewLine]", 
+       
+       RowBox[{"RX", " ", "=", " ", 
+        RowBox[{
+         FractionBox["1", 
+          RowBox[{"Sqrt", "[", "2", "]"}]], 
+         RowBox[{"{", 
+          RowBox[{
+           RowBox[{"{", 
+            RowBox[{"1", ",", 
+             RowBox[{"-", "\[ImaginaryI]"}]}], "}"}], ",", 
+           RowBox[{"{", 
+            RowBox[{
+             RowBox[{"-", "\[ImaginaryI]"}], ",", "1"}], "}"}]}], "}"}]}]}], 
+       ";", "\[IndentingNewLine]", 
+       RowBox[{"RY", "=", 
+        RowBox[{
+         FractionBox["1", 
+          RowBox[{"Sqrt", "[", "2", "]"}]], 
+         RowBox[{"{", 
+          RowBox[{
+           RowBox[{"{", 
+            RowBox[{"1", ",", 
+             RowBox[{"-", "1"}]}], "}"}], ",", 
+           RowBox[{"{", 
+            RowBox[{"1", ",", "1"}], "}"}]}], "}"}]}]}], ";", 
+       "\[IndentingNewLine]", 
+       RowBox[{"S", " ", "=", 
+        RowBox[{
+         FractionBox[
+          RowBox[{"1", "-", "\[ImaginaryI]"}], 
+          RowBox[{"Sqrt", "[", "2", "]"}]], 
+         RowBox[{"{", 
+          RowBox[{
+           RowBox[{"{", 
+            RowBox[{"1", ",", "0"}], "}"}], ",", 
+           RowBox[{"{", 
+            RowBox[{"0", ",", "\[ImaginaryI]"}], "}"}]}], "}"}]}]}], ";", 
+       "\[IndentingNewLine]", 
+       RowBox[{"H", "=", 
+        RowBox[{
+         FractionBox["1", 
+          RowBox[{"Sqrt", "[", "2", "]"}]], 
+         RowBox[{"{", 
+          RowBox[{
+           RowBox[{"{", 
+            RowBox[{"1", ",", "1"}], "}"}], ",", 
+           RowBox[{"{", 
+            RowBox[{"1", ",", 
+             RowBox[{"-", "1"}]}], "}"}]}], "}"}]}]}], ";", 
+       "\[IndentingNewLine]", 
+       RowBox[{"\[Theta]", "=", 
+        RowBox[{
+         FractionBox["1", 
+          RowBox[{"Sqrt", "[", "2", "]"}]], 
+         RowBox[{"{", 
+          RowBox[{
+           RowBox[{"{", 
+            RowBox[{
+             RowBox[{"-", "1"}], ",", "1"}], "}"}], ",", 
+           RowBox[{"{", 
+            RowBox[{"1", ",", "1"}], "}"}]}], "}"}]}]}], ";", 
+       "\[IndentingNewLine]", 
+       RowBox[{"\[CapitalGamma]", "=", 
+        RowBox[{
+         FractionBox[
+          RowBox[{"1", "-", "\[ImaginaryI]"}], "2"], 
+         RowBox[{"{", 
+          RowBox[{
+           RowBox[{"{", 
+            RowBox[{"1", ",", 
+             RowBox[{"-", "\[ImaginaryI]"}]}], "}"}], ",", 
+           RowBox[{"{", 
+            RowBox[{"1", ",", "\[ImaginaryI]"}], "}"}]}], "}"}]}]}], ";", 
+       "\[IndentingNewLine]", "\[IndentingNewLine]", 
+       RowBox[{"(*", 
+        RowBox[{
+         RowBox[{"List", " ", "of", " ", "one", " ", "qubit", " ", "gates"}], 
+         ",", " ", 
+         RowBox[{
+         "remove", " ", "from", " ", "this", " ", "list", " ", "if", " ", 
+          "you", " ", "want", " ", "to", " ", "affect", " ", "the", " ", 
+          "available", " ", "pool", " ", "the", " ", "brickwork", " ", 
+          "generation", " ", "is", " ", "selecting", " ", "from"}]}], "*)"}], 
+       "\[IndentingNewLine]", 
+       RowBox[{"onegatelist", "=", " ", 
+        RowBox[{"{", 
+         RowBox[{
+         "X", ",", "Y", ",", "Z", ",", "S", ",", "H", ",", "\[Theta]", ",", 
+          "RX", ",", "RY", ",", "Id", ",", "\[CapitalGamma]"}], "}"}]}], ";", 
+       "\[IndentingNewLine]", "\[IndentingNewLine]", 
+       RowBox[{"(*", 
+        RowBox[{"Defining", " ", "two", " ", "qubit", " ", "gates"}], "*)"}], 
+       "\[IndentingNewLine]", 
+       RowBox[{"C1", " ", "=", " ", 
+        RowBox[{
+         FractionBox["1", "2"], 
+         RowBox[{"{", 
+          RowBox[{
+           RowBox[{"{", 
+            RowBox[{"1", ",", "1", ",", "1", ",", 
+             RowBox[{"-", "1"}]}], "}"}], ",", 
+           RowBox[{"{", 
+            RowBox[{"1", ",", "1", ",", 
+             RowBox[{"-", "1"}], ",", "1"}], "}"}], ",", 
+           RowBox[{"{", 
+            RowBox[{"1", ",", 
+             RowBox[{"-", "1"}], ",", "1", ",", "1"}], "}"}], ",", 
+           RowBox[{"{", 
+            RowBox[{
+             RowBox[{"-", "1"}], ",", "1", ",", "1", ",", "1"}], "}"}]}], 
+          "}"}]}]}], ";", "\[IndentingNewLine]", 
+       RowBox[{"C2", " ", "=", " ", 
+        RowBox[{
+         FractionBox["1", "2"], 
+         RowBox[{"{", 
+          RowBox[{
+           RowBox[{"{", 
+            RowBox[{"1", ",", 
+             RowBox[{"-", "\[ImaginaryI]"}], ",", 
+             RowBox[{"-", "\[ImaginaryI]"}], ",", "1"}], "}"}], ",", 
+           RowBox[{"{", 
+            RowBox[{"\[ImaginaryI]", ",", "1", ",", 
+             RowBox[{"-", "1"}], ",", 
+             RowBox[{"-", "\[ImaginaryI]"}]}], "}"}], ",", 
+           RowBox[{"{", 
+            RowBox[{"\[ImaginaryI]", ",", 
+             RowBox[{"-", "1"}], ",", "1", ",", 
+             RowBox[{"-", "\[ImaginaryI]"}]}], "}"}], ",", 
+           RowBox[{"{", 
+            RowBox[{
+            "1", ",", "\[ImaginaryI]", ",", "\[ImaginaryI]", ",", "1"}], 
+            "}"}]}], "}"}]}]}], ";", "\[IndentingNewLine]", 
+       RowBox[{"C3", " ", "=", " ", 
+        RowBox[{"{", 
+         RowBox[{
+          RowBox[{"{", 
+           RowBox[{"1", ",", "0", ",", "0", ",", "0"}], "}"}], ",", 
+          RowBox[{"{", 
+           RowBox[{"0", ",", "1", ",", "0", ",", "0"}], "}"}], ",", 
+          RowBox[{"{", 
+           RowBox[{"0", ",", "0", ",", "1", ",", "0"}], "}"}], ",", 
+          RowBox[{"{", 
+           RowBox[{"0", ",", "0", ",", "0", ",", 
+            RowBox[{"-", "1"}]}], "}"}]}], "}"}]}], ";", 
+       "\[IndentingNewLine]", 
+       RowBox[{"C4", " ", "=", " ", 
+        RowBox[{
+         FractionBox["1", "2"], 
+         RowBox[{"{", 
+          RowBox[{
+           RowBox[{"{", 
+            RowBox[{"1", ",", "1", ",", 
+             RowBox[{"-", "\[ImaginaryI]"}], ",", "\[ImaginaryI]"}], "}"}], 
+           ",", 
+           RowBox[{"{", 
+            RowBox[{"1", ",", "1", ",", "\[ImaginaryI]", ",", 
+             RowBox[{"-", "\[ImaginaryI]"}]}], "}"}], ",", 
+           RowBox[{"{", 
+            RowBox[{"\[ImaginaryI]", ",", 
+             RowBox[{"-", "\[ImaginaryI]"}], ",", "1", ",", "1"}], "}"}], ",", 
+           RowBox[{"{", 
+            RowBox[{
+             RowBox[{"-", "\[ImaginaryI]"}], ",", "\[ImaginaryI]", ",", "1", 
+             ",", "1"}], "}"}]}], "}"}]}]}], ";", "\[IndentingNewLine]", 
+       RowBox[{"C5", " ", "=", " ", 
+        RowBox[{"{", 
+         RowBox[{
+          RowBox[{"{", 
+           RowBox[{"1", ",", "0", ",", "0", ",", "0"}], "}"}], ",", 
+          RowBox[{"{", 
+           RowBox[{"0", ",", "1", ",", "0", ",", "0"}], "}"}], ",", 
+          RowBox[{"{", 
+           RowBox[{"0", ",", "0", ",", "0", ",", 
+            RowBox[{"-", "\[ImaginaryI]"}]}], "}"}], ",", 
+          RowBox[{"{", 
+           RowBox[{"0", ",", "0", ",", "\[ImaginaryI]", ",", "0"}], "}"}]}], 
+         "}"}]}], ";", "\[IndentingNewLine]", 
+       RowBox[{"C6", " ", "=", 
+        RowBox[{"{", 
+         RowBox[{
+          RowBox[{"{", 
+           RowBox[{"1", ",", "0", ",", "0", ",", "0"}], "}"}], ",", 
+          RowBox[{"{", 
+           RowBox[{"0", ",", "0", ",", "0", ",", "1"}], "}"}], ",", 
+          RowBox[{"{", 
+           RowBox[{"0", ",", "0", ",", "1", ",", "0"}], "}"}], ",", 
+          RowBox[{"{", 
+           RowBox[{"0", ",", "1", ",", "0", ",", "0"}], "}"}]}], "}"}]}], ";",
+        "\[IndentingNewLine]", 
+       RowBox[{"SW", " ", "=", " ", 
+        RowBox[{"{", 
+         RowBox[{
+          RowBox[{"{", 
+           RowBox[{"1", ",", "0", ",", "0", ",", "0"}], "}"}], ",", 
+          RowBox[{"{", 
+           RowBox[{"0", ",", "0", ",", "1", ",", "0"}], "}"}], ",", 
+          RowBox[{"{", 
+           RowBox[{"0", ",", "1", ",", "0", ",", "0"}], "}"}], ",", 
+          RowBox[{"{", 
+           RowBox[{"0", ",", "0", ",", "0", ",", "1"}], "}"}]}], "}"}]}], ";",
+        "\[IndentingNewLine]", "\[IndentingNewLine]", 
+       RowBox[{"(*", 
+        RowBox[{
+         RowBox[{"List", " ", "of", " ", "two", " ", "qubit", " ", "gates"}], 
+         ",", " ", 
+         RowBox[{
+         "remove", " ", "from", " ", "this", " ", "list", " ", "if", " ", 
+          "you", " ", "want", " ", "to", " ", "affect", " ", "the", " ", 
+          "available", " ", "pool", " ", "the", " ", "brickwork", " ", 
+          "generation", " ", "is", " ", "selecting", " ", "from"}]}], "*)"}], 
+       "\[IndentingNewLine]", 
+       RowBox[{"twogatelist", " ", "=", " ", 
+        RowBox[{"{", 
+         RowBox[{
+         "C1", ",", "C2", ",", "C3", ",", "C4", ",", "C5", ",", "C6", ",", 
+          "SW"}], "}"}]}], ";", "\[IndentingNewLine]", "\[IndentingNewLine]", 
+       "\[IndentingNewLine]", 
+       RowBox[{"(*", 
+        RowBox[{"Initializing", " ", "the", " ", "operator"}], "*)"}], 
+       "\[IndentingNewLine]", 
+       RowBox[{"state", " ", "=", " ", 
+        RowBox[{"{", "3", "}"}]}], ";", "\[IndentingNewLine]", 
+       RowBox[{"For", "[", 
+        RowBox[{
+         RowBox[{"i", "=", "1"}], ",", 
+         RowBox[{"i", "<", "qubitnum"}], ",", " ", 
+         RowBox[{"i", "++"}], ",", "\[IndentingNewLine]", 
+         RowBox[{"AppendTo", "[", 
+          RowBox[{"state", ",", " ", "4"}], "]"}]}], "]"}], ";", 
+       "\[IndentingNewLine]", "\[IndentingNewLine]", "\[IndentingNewLine]", 
+       "\[IndentingNewLine]", 
+       RowBox[{"(*", 
+        RowBox[{"Saving", " ", "initial", " ", "state"}], "*)"}], 
+       "\[IndentingNewLine]", 
+       RowBox[{"result", "=", 
+        RowBox[{"{", "}"}]}], ";", "\[IndentingNewLine]", 
+       RowBox[{"AppendTo", "[", 
+        RowBox[{"result", ",", " ", "state"}], "]"}], ";", 
+       "\[IndentingNewLine]", "\[IndentingNewLine]", 
+       RowBox[{"(*", 
+        RowBox[{"Running", " ", "simulation"}], "*)"}], "\[IndentingNewLine]", 
+       RowBox[{"Do", "[", "\[IndentingNewLine]", 
+        RowBox[{"(*", 
+         RowBox[{
+         "Developing", " ", "random", " ", "Brickwork", " ", "every", " ", 
+          "step"}], "*)"}], "\[IndentingNewLine]", 
+        RowBox[{
+         RowBox[{
+          RowBox[{"firststepgates", " ", "=", " ", 
+           RowBox[{"{", "}"}]}], ";", "\[IndentingNewLine]", 
+          "\[IndentingNewLine]", 
+          RowBox[{"For", "[", 
+           RowBox[{
+            RowBox[{"n", "=", "1"}], ",", " ", 
+            RowBox[{"n", "\[LessEqual]", 
+             RowBox[{"qubitnum", "/", "2"}]}], ",", " ", 
+            RowBox[{"n", "++"}], ",", "\[IndentingNewLine]", 
+            RowBox[{
+             RowBox[{"oneortwo", " ", "=", " ", 
+              RowBox[{"RandomChoice", "[", 
+               RowBox[{
+                RowBox[{"{", 
+                 RowBox[{
+                  RowBox[{"1", "-", "twogatelikelihood"}], ",", 
+                  "twogatelikelihood"}], "}"}], "->", " ", 
+                RowBox[{"{", 
+                 RowBox[{"1", ",", "2"}], "}"}]}], "]"}]}], ";", 
+             "\[IndentingNewLine]", 
+             RowBox[{"If", " ", "[", 
+              RowBox[{
+               RowBox[{"oneortwo", " ", "==", " ", "1"}], ",", 
+               RowBox[{"gate", "=", " ", 
+                RowBox[{"KroneckerProduct", "[", 
+                 RowBox[{
+                  RowBox[{"RandomChoice", "[", "onegatelist", "]"}], ",", 
+                  RowBox[{"RandomChoice", "[", "onegatelist", "]"}]}], 
+                 "]"}]}]}], "]"}], ";", "\[IndentingNewLine]", 
+             RowBox[{"If", "[", 
+              RowBox[{
+               RowBox[{"oneortwo", " ", "==", "2"}], ",", " ", 
+               RowBox[{"gate", " ", "=", " ", 
+                RowBox[{"RandomChoice", "[", "twogatelist", "]"}]}]}], "]"}], 
+             ";", "\[IndentingNewLine]", 
+             RowBox[{"AppendTo", "[", 
+              RowBox[{"firststepgates", ",", " ", "gate"}], "]"}]}]}], "]"}], 
+          ";", "\[IndentingNewLine]", "\[IndentingNewLine]", 
+          RowBox[{"secondstepgates", " ", "=", " ", 
+           RowBox[{"{", "}"}]}], ";", "\[IndentingNewLine]", 
+          RowBox[{"For", "[", 
+           RowBox[{
+            RowBox[{"n", "=", "1"}], ",", " ", 
+            RowBox[{"n", "\[LessEqual]", 
+             RowBox[{"qubitnum", "/", "2"}]}], ",", " ", 
+            RowBox[{"n", "++"}], ",", "\[IndentingNewLine]", 
+            RowBox[{
+             RowBox[{"oneortwo", " ", "=", " ", 
+              RowBox[{"RandomChoice", "[", 
+               RowBox[{
+                RowBox[{"{", 
+                 RowBox[{
+                  RowBox[{"1", "-", "twogatelikelihood"}], ",", 
+                  "twogatelikelihood"}], "}"}], "->", " ", 
+                RowBox[{"{", 
+                 RowBox[{"1", ",", "2"}], "}"}]}], "]"}]}], ";", 
+             "\[IndentingNewLine]", 
+             RowBox[{"If", " ", "[", 
+              RowBox[{
+               RowBox[{"oneortwo", " ", "==", " ", "1"}], ",", " ", 
+               RowBox[{"gate", "=", " ", 
+                RowBox[{"KroneckerProduct", "[", 
+                 RowBox[{
+                  RowBox[{"RandomChoice", "[", "onegatelist", "]"}], ",", 
+                  RowBox[{"RandomChoice", "[", "onegatelist", "]"}]}], 
+                 "]"}]}]}], "]"}], ";", "\[IndentingNewLine]", 
+             RowBox[{"If", "[", 
+              RowBox[{
+               RowBox[{"oneortwo", " ", "==", "2"}], ",", " ", 
+               RowBox[{"gate", " ", "=", " ", 
+                RowBox[{"RandomChoice", "[", "twogatelist", "]"}]}]}], "]"}], 
+             ";", "\[IndentingNewLine]", 
+             RowBox[{"AppendTo", "[", 
+              RowBox[{"secondstepgates", ",", " ", "gate"}], "]"}]}]}], "]"}],
+           ";", "\[IndentingNewLine]", "\[IndentingNewLine]", 
+          RowBox[{"(*", 
+           RowBox[{
+            RowBox[{"Applying", " ", "first", " ", "layer"}], ",", " ", 
+            RowBox[{"even", " ", "pairs"}]}], "*)"}], "\[IndentingNewLine]", 
+          RowBox[{"Do", "[", 
+           RowBox[{
+            RowBox[{
+             RowBox[{"newpair1", " ", "=", " ", 
+              RowBox[{"which2PauliString", "[", 
+               RowBox[{
+                RowBox[{"firststepgates", "[", 
+                 RowBox[{"[", 
+                  RowBox[{"Quotient", "[", 
+                   RowBox[{
+                    RowBox[{"m", "+", "1"}], ",", "2"}], "]"}], "]"}], "]"}], 
+                ",", 
+                RowBox[{"state", "[", 
+                 RowBox[{"[", "m", "]"}], "]"}], ",", 
+                RowBox[{"state", "[", 
+                 RowBox[{"[", 
+                  RowBox[{"m", "+", "1"}], "]"}], "]"}]}], "]"}]}], ";", "\n",
+              "\[IndentingNewLine]", 
+             RowBox[{
+              RowBox[{"state", "[", 
+               RowBox[{"[", "m", "]"}], "]"}], "=", 
+              RowBox[{
+               RowBox[{"newpair1", "[", 
+                RowBox[{"[", "1", "]"}], "]"}], "*", 
+               RowBox[{"newpair1", "[", 
+                RowBox[{"[", "3", "]"}], "]"}]}]}], ";", 
+             "\[IndentingNewLine]", "\[IndentingNewLine]", 
+             RowBox[{
+              RowBox[{"state", "[", 
+               RowBox[{"[", 
+                RowBox[{"m", "+", "1"}], "]"}], "]"}], "=", 
+              RowBox[{
+               RowBox[{"newpair1", "[", 
+                RowBox[{"[", "2", "]"}], "]"}], "*", 
+               RowBox[{"newpair1", "[", 
+                RowBox[{"[", "3", "]"}], "]"}]}]}], ";"}], ",", 
+            "\[IndentingNewLine]", 
+            RowBox[{"{", 
+             RowBox[{"m", ",", "1", ",", 
+              RowBox[{
+               RowBox[{"Length", "[", "state", "]"}], "-", "1"}], ",", "2"}], 
+             "}"}]}], "]"}], ";", "\[IndentingNewLine]", 
+          RowBox[{"AppendTo", "[", 
+           RowBox[{"result", ",", "state"}], "]"}], ";", 
+          "\[IndentingNewLine]", "\[IndentingNewLine]", 
+          RowBox[{"(*", 
+           RowBox[{
+            RowBox[{"Applying", " ", "second", " ", "layer"}], ",", " ", 
+            RowBox[{"odd", " ", "pairs"}]}], "*)"}], "\[IndentingNewLine]", 
+          RowBox[{"Do", "[", 
+           RowBox[{
+            RowBox[{
+             RowBox[{"newpair2", " ", "=", " ", 
+              RowBox[{"which2PauliString", "[", 
+               RowBox[{
+                RowBox[{"secondstepgates", "[", 
+                 RowBox[{"[", 
+                  RowBox[{"Quotient", "[", 
+                   RowBox[{"k", ",", "2"}], "]"}], "]"}], "]"}], ",", 
+                RowBox[{"state", "[", 
+                 RowBox[{"[", "k", "]"}], "]"}], ",", 
+                RowBox[{"state", "[", 
+                 RowBox[{"[", 
+                  RowBox[{"k", "+", "1"}], "]"}], "]"}]}], "]"}]}], ";", 
+             "\[IndentingNewLine]", "\[IndentingNewLine]", 
+             RowBox[{
+              RowBox[{"state", "[", 
+               RowBox[{"[", "k", "]"}], "]"}], "=", 
+              RowBox[{
+               RowBox[{"newpair2", "[", 
+                RowBox[{"[", "1", "]"}], "]"}], "*", 
+               RowBox[{"newpair2", "[", 
+                RowBox[{"[", "3", "]"}], "]"}]}]}], ";", 
+             "\[IndentingNewLine]", "\[IndentingNewLine]", 
+             RowBox[{
+              RowBox[{"state", "[", 
+               RowBox[{"[", 
+                RowBox[{"k", "+", "1"}], "]"}], "]"}], "=", 
+              RowBox[{
+               RowBox[{"newpair2", "[", 
+                RowBox[{"[", "2", "]"}], "]"}], "*", 
+               RowBox[{"newpair2", "[", 
+                RowBox[{"[", "3", "]"}], "]"}]}]}], ";"}], ",", 
+            "\[IndentingNewLine]", 
+            RowBox[{"{", 
+             RowBox[{"k", ",", "2", ",", 
+              RowBox[{
+               RowBox[{"Length", "[", "state", "]"}], "-", "1"}], ",", "2"}], 
+             "}"}]}], "]"}], ";", "\[IndentingNewLine]", 
+          "\[IndentingNewLine]", 
+          RowBox[{"(*", 
+           RowBox[{
+           "Wrapping", " ", "last", " ", "qubit", " ", "to", " ", "first", 
+            " ", "qubit", " ", "with", " ", "odd", " ", "gates"}], "*)"}], 
+          "\[IndentingNewLine]", 
+          RowBox[{"newpair3", "=", 
+           RowBox[{"which2PauliString", "[", 
+            RowBox[{
+             RowBox[{"Last", "[", "secondstepgates", "]"}], ",", 
+             RowBox[{"Last", "[", "state", "]"}], ",", 
+             RowBox[{"First", "[", "state", "]"}]}], "]"}]}], ";", 
+          "\[IndentingNewLine]", 
+          RowBox[{
+           RowBox[{"state", "[", 
+            RowBox[{"[", "qubitnum", "]"}], "]"}], " ", "=", " ", 
+           RowBox[{
+            RowBox[{"newpair3", "[", 
+             RowBox[{"[", "1", "]"}], "]"}], "*", 
+            RowBox[{"newpair3", "[", 
+             RowBox[{"[", "3", "]"}], "]"}]}]}], ";", "\[IndentingNewLine]", 
+          RowBox[{
+           RowBox[{"state", "[", 
+            RowBox[{"[", "1", "]"}], "]"}], "=", 
+           RowBox[{
+            RowBox[{"newpair3", "[", 
+             RowBox[{"[", "2", "]"}], "]"}], "*", 
+            RowBox[{"newpair3", "[", 
+             RowBox[{"[", "3", "]"}], "]"}]}]}], ";", "\[IndentingNewLine]", 
+          "\[IndentingNewLine]", "\[IndentingNewLine]", 
+          RowBox[{"AppendTo", "[", 
+           RowBox[{"result", ",", "state"}], "]"}], ";"}], ",", 
+         "\[IndentingNewLine]", 
+         RowBox[{"{", 
+          RowBox[{"l", ",", "1", ",", "layer"}], "}"}]}], "]"}], ";", 
+       "\[IndentingNewLine]", "\[IndentingNewLine]", 
+       RowBox[{"ArrayPlot", "[", 
+        RowBox[{
+         FractionBox["1", "4"], "result"}], "]"}]}]}], "]"}]}], 
+   "\[IndentingNewLine]", "\[IndentingNewLine]"}]}]], "Input",
+ CellChangeTimes->{{3.959938455692916*^9, 3.959938698093191*^9}, {
+   3.959947173949347*^9, 3.959947333999732*^9}, {3.9599473874236383`*^9, 
+   3.959947406264152*^9}, {3.959947455717465*^9, 3.9599476707697678`*^9}, {
+   3.9599477665345373`*^9, 3.959947822303727*^9}, {3.959947863290926*^9, 
+   3.959948052836137*^9}, {3.9599481394561872`*^9, 3.9599481949303827`*^9}, 
+   3.959948284294005*^9, {3.9599483222669497`*^9, 3.959948357670547*^9}, {
+   3.959948391508278*^9, 3.959948407392873*^9}, {3.95994846238876*^9, 
+   3.9599484683923683`*^9}},ExpressionUUID->"c9553d4c-f378-49a1-a715-\
+8d2041a81f8c"]
+},
+WindowSize->{808, 747},
+WindowMargins->{{Automatic, 31}, {Automatic, 4}},
+FrontEndVersion->"14.0 for Mac OS X ARM (64-bit) (December 12, 2023)",
+StyleDefinitions->"Default.nb",
+ExpressionUUID->"87d1cd3f-2d1a-4458-bf76-80b77ce6e0f8"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[558, 20, 50128, 1178, 5288, "Input",ExpressionUUID->"c9553d4c-f378-49a1-a715-8d2041a81f8c"]
+}
+]
+*)
+
