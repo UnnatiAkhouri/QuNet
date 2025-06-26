@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[     51043,       1214]
-NotebookOptionsPosition[     50690,       1200]
-NotebookOutlinePosition[     51086,       1216]
-CellTagsIndexPosition[     51043,       1213]
+NotebookDataLength[     57453,       1354]
+NotebookOptionsPosition[     57100,       1340]
+NotebookOutlinePosition[     57496,       1356]
+CellTagsIndexPosition[     57453,       1353]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -694,10 +694,74 @@ Cell[BoxData[
          RowBox[{"{", 
           RowBox[{"l", ",", "1", ",", "layer"}], "}"}]}], "]"}], ";", 
        "\[IndentingNewLine]", "\[IndentingNewLine]", 
-       RowBox[{"ArrayPlot", "[", 
+       RowBox[{"(*", "Plotting", "*)"}], "\[IndentingNewLine]", 
+       RowBox[{"Labeled", "[", 
         RowBox[{
-         FractionBox["1", "4"], "result"}], "]"}]}]}], "]"}]}], 
-   "\[IndentingNewLine]", "\[IndentingNewLine]", "\[IndentingNewLine]", 
+         RowBox[{"ArrayPlot", "[", 
+          RowBox[{"result", ",", "\[IndentingNewLine]", 
+           RowBox[{"Frame", "->", "False"}], ",", "\[IndentingNewLine]", " ", 
+           
+           RowBox[{"Axes", "->", "True"}], ",", " ", "\[IndentingNewLine]", 
+           RowBox[{"AxesLabel", " ", "->", 
+            RowBox[{"{", " ", 
+             RowBox[{
+             "\"\<Pauli String Position\>\"", ",", "\"\<Circuit Layer\>\""}], 
+             "}"}]}], ",", "\[IndentingNewLine]", 
+           RowBox[{"ColorRules", " ", "->", " ", 
+            RowBox[{"{", 
+             RowBox[{
+              RowBox[{"1", "->", "Blue"}], ",", 
+              RowBox[{
+               RowBox[{"-", "1"}], "->", " ", "Blue"}], ",", " ", 
+              RowBox[{"\[ImaginaryI]", "->", " ", "Blue"}], ",", " ", 
+              RowBox[{
+               RowBox[{"-", "\[ImaginaryI]"}], "->", " ", "Blue"}], ",", " ", 
+              
+              RowBox[{"2", "->", "Orange"}], ",", 
+              RowBox[{
+               RowBox[{"-", "2"}], "->", "Orange"}], ",", 
+              RowBox[{
+               RowBox[{
+                RowBox[{"-", "2"}], "\[ImaginaryI]"}], " ", "->", " ", 
+               "Orange"}], ",", " ", 
+              RowBox[{
+               RowBox[{"2", "\[ImaginaryI]"}], "->", "Orange"}], ",", 
+              RowBox[{"3", "->", "Green"}], ",", 
+              RowBox[{
+               RowBox[{"-", "3"}], "->", "Green"}], ",", " ", 
+              RowBox[{
+               RowBox[{
+                RowBox[{"-", "3"}], "\[ImaginaryI]"}], "->", "Green"}], ",", 
+              " ", 
+              RowBox[{
+               RowBox[{"3", "\[ImaginaryI]"}], "->", " ", "Green"}], ",", " ", 
+              RowBox[{"4", "->", "Black"}], ",", 
+              RowBox[{
+               RowBox[{"-", "4"}], "->", "Black"}], ",", 
+              RowBox[{
+               RowBox[{
+                RowBox[{"-", "4"}], "\[ImaginaryI]"}], "->", "Black"}], ",", 
+              " ", 
+              RowBox[{
+               RowBox[{"4", "\[ImaginaryI]"}], "->", "Black"}]}], "}"}]}], 
+           ",", "\[IndentingNewLine]", 
+           RowBox[{"GridLines", "->", "Automatic"}], ",", 
+           "\[IndentingNewLine]", 
+           RowBox[{"DataReversed", "->", 
+            RowBox[{"{", 
+             RowBox[{"True", ",", " ", "False"}], "}"}]}]}], "]"}], ",", 
+         "\[IndentingNewLine]", 
+         RowBox[{"SwatchLegend", "[", 
+          RowBox[{
+           RowBox[{"{", 
+            RowBox[{"Blue", ",", "Orange", ",", "Green", ",", "Black"}], 
+            "}"}], ",", 
+           RowBox[{"{", 
+            RowBox[{
+            "\"\<X\>\"", ",", "\"\<Y\>\"", ",", "\"\<Z\>\"", ",", 
+             "\"\<I\>\""}], "}"}]}], "]"}], ",", "Right"}], "]"}]}]}], 
+     "]"}]}], "\[IndentingNewLine]", "\[IndentingNewLine]", 
+   "\[IndentingNewLine]", 
    RowBox[{"(*", 
     RowBox[{"Random", " ", "Brickwork", " ", "Circuit"}], "*)"}], 
    "\[IndentingNewLine]", 
@@ -1184,25 +1248,101 @@ Cell[BoxData[
          RowBox[{"{", 
           RowBox[{"l", ",", "1", ",", "layer"}], "}"}]}], "]"}], ";", 
        "\[IndentingNewLine]", "\[IndentingNewLine]", 
-       RowBox[{"ArrayPlot", "[", 
+       RowBox[{"(*", "Plotting", "*)"}], "\[IndentingNewLine]", 
+       RowBox[{"Labeled", "[", 
         RowBox[{
-         FractionBox["1", "4"], "result"}], "]"}]}]}], "]"}]}], 
-   "\[IndentingNewLine]", "\[IndentingNewLine]"}]}]], "Input",
+         RowBox[{"ArrayPlot", "[", 
+          RowBox[{"result", ",", "\[IndentingNewLine]", 
+           RowBox[{"Frame", "->", "False"}], ",", "\[IndentingNewLine]", " ", 
+           
+           RowBox[{"Axes", "->", "True"}], ",", " ", "\[IndentingNewLine]", 
+           RowBox[{"AxesLabel", " ", "->", 
+            RowBox[{"{", " ", 
+             RowBox[{
+             "\"\<Pauli String Position\>\"", ",", "\"\<Circuit Layer\>\""}], 
+             "}"}]}], ",", "\[IndentingNewLine]", 
+           RowBox[{"ColorRules", " ", "->", " ", 
+            RowBox[{"{", 
+             RowBox[{
+              RowBox[{"1", "->", "Blue"}], ",", 
+              RowBox[{
+               RowBox[{"-", "1"}], "->", " ", "Blue"}], ",", " ", 
+              RowBox[{"\[ImaginaryI]", "->", " ", "Blue"}], ",", " ", 
+              RowBox[{
+               RowBox[{"-", "\[ImaginaryI]"}], "->", " ", "Blue"}], ",", " ", 
+              
+              RowBox[{"2", "->", "Orange"}], ",", 
+              RowBox[{
+               RowBox[{"-", "2"}], "->", "Orange"}], ",", 
+              RowBox[{
+               RowBox[{
+                RowBox[{"-", "2"}], "\[ImaginaryI]"}], " ", "->", " ", 
+               "Orange"}], ",", " ", 
+              RowBox[{
+               RowBox[{"2", "\[ImaginaryI]"}], "->", "Orange"}], ",", 
+              RowBox[{"3", "->", "Green"}], ",", 
+              RowBox[{
+               RowBox[{"-", "3"}], "->", "Green"}], ",", " ", 
+              RowBox[{
+               RowBox[{
+                RowBox[{"-", "3"}], "\[ImaginaryI]"}], "->", "Green"}], ",", 
+              " ", 
+              RowBox[{
+               RowBox[{"3", "\[ImaginaryI]"}], "->", " ", "Green"}], ",", " ", 
+              RowBox[{"4", "->", "Black"}], ",", 
+              RowBox[{
+               RowBox[{"-", "4"}], "->", "Black"}], ",", 
+              RowBox[{
+               RowBox[{
+                RowBox[{"-", "4"}], "\[ImaginaryI]"}], "->", "Black"}], ",", 
+              " ", 
+              RowBox[{
+               RowBox[{"4", "\[ImaginaryI]"}], "->", "Black"}]}], "}"}]}], 
+           ",", "\[IndentingNewLine]", 
+           RowBox[{"GridLines", "->", "Automatic"}], ",", 
+           "\[IndentingNewLine]", 
+           RowBox[{"DataReversed", "->", 
+            RowBox[{"{", 
+             RowBox[{"True", ",", " ", "False"}], "}"}]}]}], "]"}], ",", 
+         "\[IndentingNewLine]", 
+         RowBox[{"SwatchLegend", "[", 
+          RowBox[{
+           RowBox[{"{", 
+            RowBox[{"Blue", ",", "Orange", ",", "Green", ",", "Black"}], 
+            "}"}], ",", 
+           RowBox[{"{", 
+            RowBox[{
+            "\"\<X\>\"", ",", "\"\<Y\>\"", ",", "\"\<Z\>\"", ",", 
+             "\"\<I\>\""}], "}"}]}], "]"}], ",", "Right"}], "]"}]}]}], 
+     "]"}]}], "\[IndentingNewLine]", "\[IndentingNewLine]"}]}]], "Input",
  CellChangeTimes->{{3.959938455692916*^9, 3.959938698093191*^9}, {
    3.959947173949347*^9, 3.959947333999732*^9}, {3.9599473874236383`*^9, 
-   3.959947406264152*^9}, {3.959947455717465*^9, 3.9599476707697678`*^9}, {
-   3.9599477665345373`*^9, 3.959947822303727*^9}, {3.959947863290926*^9, 
-   3.959948052836137*^9}, {3.9599481394561872`*^9, 3.9599481949303827`*^9}, 
-   3.959948284294005*^9, {3.9599483222669497`*^9, 3.959948357670547*^9}, {
+   3.959947406264152*^9}, {3.959947455717465*^9, 3.9599476707697673`*^9}, {
+   3.959947766534538*^9, 3.959947822303727*^9}, {3.959947863290926*^9, 
+   3.959948052836137*^9}, {3.959948139456186*^9, 3.9599481949303823`*^9}, 
+   3.959948284294005*^9, {3.959948322266949*^9, 3.959948357670547*^9}, {
    3.959948391508278*^9, 3.959948407392873*^9}, {3.95994846238876*^9, 
-   3.9599484683923683`*^9}},ExpressionUUID->"c9553d4c-f378-49a1-a715-\
-8d2041a81f8c"]
+   3.9599484683923683`*^9}, {3.959948887820785*^9, 3.959948995444415*^9}, {
+   3.95994905430555*^9, 3.959949068911994*^9}, {3.959949098921735*^9, 
+   3.959949158115241*^9}, {3.959949224654187*^9, 3.959949318776793*^9}, {
+   3.959949353034758*^9, 3.959949362277223*^9}, 3.959949473582337*^9, {
+   3.959949538317424*^9, 3.9599495464019403`*^9}, {3.959949588147903*^9, 
+   3.959949601690461*^9}, {3.959949885026649*^9, 3.9599498975306187`*^9}, {
+   3.959949935570614*^9, 3.95994994340475*^9}, {3.959949989022766*^9, 
+   3.95994999605624*^9}, {3.959950130463316*^9, 3.959950163045679*^9}, {
+   3.959950196382298*^9, 3.959950261920425*^9}, {3.95995031036343*^9, 
+   3.959950374675189*^9}, {3.959950414294464*^9, 3.959950431383918*^9}, {
+   3.9599505155624647`*^9, 3.9599505658594522`*^9}, {3.959950617743988*^9, 
+   3.959950628231893*^9}, {3.959950669201263*^9, 3.959950696319293*^9}, {
+   3.959950727507785*^9, 3.9599507365183163`*^9}},
+ CellLabel->
+  "In[221]:=",ExpressionUUID->"c9553d4c-f378-49a1-a715-8d2041a81f8c"]
 },
 WindowSize->{808, 747},
 WindowMargins->{{Automatic, 31}, {Automatic, 4}},
 FrontEndVersion->"14.0 for Mac OS X ARM (64-bit) (December 12, 2023)",
 StyleDefinitions->"Default.nb",
-ExpressionUUID->"87d1cd3f-2d1a-4458-bf76-80b77ce6e0f8"
+ExpressionUUID->"1ebabee8-f1f8-44f0-88f2-4a329eed6c46"
 ]
 (* End of Notebook Content *)
 
@@ -1215,7 +1355,7 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[558, 20, 50128, 1178, 5288, "Input",ExpressionUUID->"c9553d4c-f378-49a1-a715-8d2041a81f8c"]
+Cell[558, 20, 56538, 1318, 5716, "Input",ExpressionUUID->"c9553d4c-f378-49a1-a715-8d2041a81f8c"]
 }
 ]
 *)
