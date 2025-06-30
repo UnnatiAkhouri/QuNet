@@ -778,6 +778,88 @@ def create_brickwork_unitaries(n_qubits: int,theta:float) -> List[np.ndarray]:
     return [U_even, U_odd]
 
 
+import numpy as np
+from itertools import permutations
+def embed_two_qubit_gate(gate, i, j, n):
+    # Permute qubits so i,j -> 0,1
+    qubit_order = [i, j] + [q for q in range(n) if q != i and q != j]
+    inv_order = np.argsort(qubit_order)
+    dim = 2 ** n
+    # Permutation matrix
+    def permute_basis(order):
+        perm = np.zeros((dim, dim), dtype=complex)
+        for k in range(dim):
+            bits = [(k >> l) & 1 for l in range(n)]
+            permuted = [bits[order[m]] for m in range(n)]
+            idx = sum([b << l for l, b in enumerate(permuted)])
+            perm[idx, k] = 1
+        return perm
+    P = permute_basis(qubit_order)
+    P_inv = permute_basis(inv_order)
+    # Gate acts on first two qubits
+    op = np.kron(gate, np.eye(2 ** (n - 2), dtype=complex))
+    return P_inv @ op @ P
+
+def create_general_circuit_unitaries(n_qubits, circuit_structure, theta):
+    pswap = create_partial_swap_gate(theta)
+    unitaries = []
+    for pairs in circuit_structure:
+        U = np.eye(2 ** n_qubits, dtype=complex)
+        for pair in pairs:
+            gate_full = embed_two_qubit_gate(pswap, pair[0], pair[1], n_qubits)
+            U = gate_full @ U
+        unitaries.append(U)
+    return unitaries
+
+def generate_nonmarkovian_circuit_unitaries(n_qubits, pattern_string, theta):
+    # Define two patterns for nearest-neighbor pairs
+    pattern_dict = {
+        'j': [(i, i+1) for i in range(0, n_qubits-1, 2)],  # even pairs: (0,1), (2,3), ...
+        'g': [(i, i+1) for i in range(1, n_qubits-1, 2)]   # odd pairs: (1,2), (3,4), ...
+    }
+    pswap = create_partial_swap_gate(theta)
+    unitaries = []
+    for letter in pattern_string:
+        pairs = pattern_dict[letter]
+        U = np.eye(2 ** n_qubits, dtype=complex)
+        for i, j in pairs:
+            gate_full = embed_two_qubit_gate(pswap, i, j, n_qubits)
+            U = gate_full @ U
+        unitaries.append(U)
+    return unitaries
+
+
+import random
+
+def generate_markov_chain_non_markovian_string(length, transition_matrix=None):
+    """
+    Generate a non-Markovian string using a Markov chain with memory.
+
+    Args:
+        length (int): Length of the string to generate.
+        transition_matrix (dict): Transition probabilities based on last two characters.
+
+    Returns:
+        str: Generated non-Markovian string.
+    """
+    if transition_matrix is None:
+        transition_matrix = {
+            ('j', 'j'): {'j': 0.05, 'g': 0.95},
+            ('j', 'g'): {'j': 0.1, 'g': 0.9},
+            ('g', 'j'): {'j': 0.02, 'g': 0.98},
+            ('g', 'g'): {'j': 0.2, 'g': 0.8},
+        }
+
+    result = ['j', 'g']  # Start with initial characters
+    for _ in range(length - 2):
+        last_two = tuple(result[-2:])
+        probabilities = transition_matrix.get(last_two, {'j': 0.5, 'g': 0.5})
+        next_char = random.choices(list(probabilities.keys()), weights=list(probabilities.values()))[0]
+        result.append(next_char)
+
+    return ''.join(result)
+
+
 def run_8_qubit_brickwork_example(theta:float):
     """
     Run the 8-qubit brickwork circuit analysis with PSWAP gates.
@@ -1057,18 +1139,74 @@ def plot_gs_basis_evolution(results, gs_results, figsize=(12, 8)):
 
 # Main execution
 if __name__ == "__main__":
-    # Show PSWAP properties
-    # Show efficiency improvements
     theta_try = np.pi/15
     # Run the main analysis
-    unitaries = create_brickwork_unitaries(8,theta_try)
+    #unitaries = create_brickwork_unitaries(8,theta_try)
     # Step 1: Get your spreading results first
-    results = analyze_with_u1_symmetry(8, "ZIIIIIII", unitaries, 5, verbose=True)
+    #results = analyze_with_u1_symmetry(8, "ZIIIIIII", unitaries, 2, verbose=True)
+    #analyzer = QuantumOperatorAnalyzer(8, symmetry='U1')
+    #gs_results = orthogonalize_evolved_operators(results['evolved_operators'], analyzer)
+    #plot_gs_basis_evolution(results, gs_results)
+    #plot_nonzero_operator_count(results)
+    #quick_plot(results)
+    #plot_final_weight_histogram(results)
 
-    # Step 2: Do Gram-Schmidt orthogonalization
-    analyzer = QuantumOperatorAnalyzer(8, symmetry='U1')
-    gs_results = orthogonalize_evolved_operators(results['evolved_operators'], analyzer)
-    plot_gs_basis_evolution(results, gs_results)
-    plot_nonzero_operator_count(results)
-    quick_plot(results)
-    plot_final_weight_histogram(results)
+    # Example usage:
+    circuit_structure = [
+         [[0,1],[2,3],[4,5],[6,7]],  # time step 1
+         [[1,4],[3,2],[5,6]],        # time step 2
+         [[0,7]]                    # time step 3 (non-nearest neighbor)
+     ]
+    unitaries = create_general_circuit_unitaries(8, circuit_structure, theta=np.pi/15)
+    #results = analyze_with_u1_symmetry(8, "ZIIIIIII", unitaries, 2, verbose=True)
+    ##analyzer = QuantumOperatorAnalyzer(8, symmetry='U1')
+    #gs_results = orthogonalize_evolved_operators(results['evolved_operators'], analyzer)
+    #plot_gs_basis_evolution(results, gs_results)
+    #plot_nonzero_operator_count(results)
+    #quick_plot(results)
+    #plot_final_weight_histogram(results)
+    # Example usage:
+    n_qubits = 8
+    pattern_string = "jgjgjggggggggggggggggggggggggggggggg"
+    theta = np.pi / 15
+    #unitaries = generate_nonmarkovian_circuit_unitaries(n_qubits, pattern_string, theta)
+    print(f"Generated {len(unitaries)} unitaries for pattern: {pattern_string}")
+    #results = analyze_with_u1_symmetry(8, "ZIIIIIII", unitaries, 20, verbose=True)
+    #analyzer = QuantumOperatorAnalyzer(8, symmetry='U1')
+    #gs_results = orthogonalize_evolved_operators(results['evolved_operators'], analyzer)
+    #plot_gs_basis_evolution(results, gs_results)
+    #plot_nonzero_operator_count(results)
+    #quick_plot(results)
+    #plot_final_weight_histogram(results)
+
+
+    n_qubits = 8
+    #pattern_string = "jjjgjjjg"
+    theta = np.pi /15
+    #unitaries = generate_nonmarkovian_circuit_unitaries(n_qubits, pattern_string, theta)
+    #print(f"Generated {len(unitaries)} unitaries for pattern: {pattern_string}")
+    for i in range(10):
+        pattern_string = generate_markov_chain_non_markovian_string(100)
+        print(f"Generated pattern string: {pattern_string}")
+    unitaries = generate_nonmarkovian_circuit_unitaries(n_qubits, pattern_string, theta)
+    #results = analyze_with_u1_symmetry(8, "ZIIIIIII", unitaries, 20, verbose=True)
+    #analyzer = QuantumOperatorAnalyzer(8, symmetry='U1')
+    #gs_results = orthogonalize_evolved_operators(results['evolved_operators'], analyzer)
+    #plot_gs_basis_evolution(results, gs_results)
+    #plot_nonzero_operator_count(results)
+    #quick_plot(results)
+    #plot_final_weight_histogram(results)
+
+    n_qubits = 8
+    pattern_string = "jgjgjgjgjgjgjgjgjgjgjgjgjgjgjgjg"
+    theta = np.pi / 15
+    #unitaries = generate_nonmarkovian_circuit_unitaries(n_qubits, pattern_string, theta)
+    #print(f"Generated {len(unitaries)} unitaries for pattern: {pattern_string}")
+    ##results = analyze_with_u1_symmetry(8, "ZIIIIIII", unitaries, 20, verbose=True)
+    #analyzer = QuantumOperatorAnalyzer(8, symmetry='U1')
+    #gs_results = orthogonalize_evolved_operators(results['evolved_operators'], analyzer)
+    #plot_gs_basis_evolution(results, gs_results)
+    #plot_nonzero_operator_count(results)
+    #quick_plot(results)
+    #plot_final_weight_histogram(results)
+
