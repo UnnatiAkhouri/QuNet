@@ -109,6 +109,25 @@ def draw_quantum_circuit(num_qubit, timesteps, gate_sequence,circuitname='quantu
     plt.savefig(circuitname,dpi=300, bbox_inches='tight')
     plt.show()
 
+
+def generate_gate_sequence_from_NM_pattern(pattern_string, num_qubits, gate_name='G'):
+    gate_sequence = []
+    for letter in pattern_string:
+        if letter == 'g':
+            # Even pairs: [0,1], [2,3], ...
+            gates = [(gate_name, i, i+1) for i in range(0, num_qubits-1, 2)]
+        elif letter == 'j':
+            # Odd pairs: [n-1,0], [1,2], [3,4], ...
+            gates = [(gate_name, num_qubits-1, 0)] + [
+                (gate_name, i, i+1) for i in range(1, num_qubits-2+1, 2)
+            ]
+        else:
+            gates = [''] * num_qubits  # No gates for unknown letter
+        gate_sequence.append(gates)
+    return gate_sequence
+
+
+
 #Visualize some famous quantum algorithms using the draw_quantum_circuit function.
 def Shors_algorithm():
     """
@@ -491,3 +510,9 @@ gates=[[('iSWAP',0,1)],[('Noise',0,1)],[('iSWAP',0,1)],[('Noise',0,1)]]
 gates=random_two_qubit_gate_sequence_with_edge_noise(8, 10, gate_name='iSWAP',p=0.5)
 draw_quantum_circuit(8, 10, gates, "h.png")
 #draw_quantum_circuit(2, 4, gates, "two_q_noise_circuit.png")
+
+# Example usage:
+pattern = "gjgggj"
+num_qubits = 8
+gates = generate_gate_sequence_from_NM_pattern(pattern, num_qubits)
+draw_quantum_circuit(num_qubits, len(pattern), gates, circuitname='eg.png')
