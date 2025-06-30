@@ -924,7 +924,7 @@ def run_8_qubit_brickwork_example(theta:float):
         print(f"Initial operator has equal X ({x_count}) and Y ({y_count}) → U1 analysis valid")
 
         results_u1 = analyze_with_u1_symmetry(n_qubits, initial_operator, unitaries, time_steps)
-        print(f"✓ U1 analysis completed!")
+        print(f"U1 analysis completed")
         print(f"U1 basis size used: {results_u1['basis_size']:,}")
     else:
         print(f"Initial operator has X={x_count}, Y={y_count} → Not U1 symmetric")
