@@ -26,7 +26,7 @@ from src import (
     order_rules)
 
 
-def execute(file_name: str, connectivity, order_rule_name: str, unitary_energy_subspace, unitary_seed, num_steps, initial_pops,
+def execute(file_name: str, connectivity, order_rule_name: str, unitary_energy_subspace, unitary_seed, num_steps, initial_pops,NM_orders_list,
             evolution_generator_type: str, chunk_size, channel_name: str,channel_prob:int ,verbosity=.1, first_10_order=None,return_all_dms=False):
     """
     file_name: name of the file to save the data to (without the .hdf5 extension) example: "ZestyGodzilla"
@@ -87,6 +87,8 @@ def execute(file_name: str, connectivity, order_rule_name: str, unitary_energy_s
             order_rule = disordered_networks.disorder_landscape_maximizes
         case'disorder_strongest_maximizes':
             order_rule = disordered_networks.disorder_strongest_maximizes
+        case'NonMarkovian':
+            order_rule = order_rules.NonMarkovian
         case _:
             raise ValueError(f"order_rule_name {order_rule_name} not recognized")
 
@@ -203,7 +205,7 @@ def execute(file_name: str, connectivity, order_rule_name: str, unitary_energy_s
         #case "corr_meas":
         #    sub_channel = src.channels.correlated_weak_measurement_kraus(0.3)
         case "None":
-            sub_channel = Identity(4)
+            sub_channel = np.eye(4)
         case _:
             raise ValueError(f"channel_name {channel_name} not recognized")
     composite_channel = embed_edge_channel_full(num_qbits,sub_channel,edge_position="start")
@@ -224,6 +226,7 @@ def execute(file_name: str, connectivity, order_rule_name: str, unitary_energy_s
                                     verbose=verbosity,
                                     order_rule=order_rule,
                                     first_10_order=first_10_order,
+                                    NM_orders_list=NM_orders_list,
                                     connectivity=connectivity,
                                     return_all_dms=False)
         #pops, two_qubit_dms, three_qubit_dms,orders_list = results
@@ -236,6 +239,7 @@ def execute(file_name: str, connectivity, order_rule_name: str, unitary_energy_s
                                     verbose=verbosity,
                                     order_rule=order_rule,
                                     first_10_order=first_10_order,
+                                    NM_orders_list=NM_orders_list,
                                     connectivity=connectivity,
                                     channel_prob=channel_prob,
                                     channels= channels,

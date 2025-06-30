@@ -4,6 +4,41 @@ from src import measurements as measure
 import numpy as np
 
 
+def NonMarkovian(NonMarkovian_orders_list,pops,connectivity,time_step):
+    num_qbits = len(pops)
+    chunk_size = 2
+
+    match connectivity:
+        case 'c2_2local':
+            pattern_dict = {
+                'g': [[i, i + 1] for i in range(0, num_qbits - 1, 2)],
+                'j': [[0, num_qbits - 1]] + [[i, i + 1] for i in range(1, num_qbits - 2, 2)]
+            }
+            letter=NonMarkovian_orders_list[time_step]
+            pairs = pattern_dict[letter]
+            order = pairs
+        case 'c4_2local':
+            order = orders.n_random_c4_2local_orders(num_qbits=num_qbits, chunk_size=chunk_size)
+        case 'c5':
+            order = orders.n_random_c5_orders(num_qbits=num_qbits, chunk_size=chunk_size, n=1)[0]
+        case 'c5_2local':
+             order = orders.n_random_c5_2local_orders(num_qbits=num_qbits, chunk_size=chunk_size)
+        case 'c6_2local':
+            order = orders.n_random_c6_2local_orders(num_qbits=num_qbits, chunk_size=chunk_size)
+        case 'cN_2local':
+            order = orders.n_random_cN_2local_orders(num_qbits=num_qbits, chunk_size=chunk_size)
+        case 'c6':
+            order = orders.n_random_c6_orders(num_qbits=num_qbits, chunk_size=chunk_size, n=1)[0]
+        case 'c7':
+            order = orders.n_random_c7_orders(num_qbits=num_qbits, chunk_size=chunk_size, n=1)[0]
+        #case 'gas':
+            #order = orders.n_random_gas_orders(num_qbits=num_qbits, chunk_size=chunk_size, n=1, seed=unitary_rng)[0]
+        case _:
+                # throw an explanatory error
+            raise ValueError(f"connectivity {connectivity} not recognized")
+    return order
+
+
 def random(past_order, prev_pops, pops, two_qubit_dms_previous, two_qubit_dms_current, connectivity, sub_unitary, dm):
     """
     Args:
