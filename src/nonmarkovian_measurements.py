@@ -5,8 +5,6 @@ import matplotlib.cm as cm
 
 from scipy import linalg
 
-
-
 def extract_observables(two_qubit_dms, n_qubits):
     """
     Extract single-qubit σz expectation values and two-qubit correlations from density matrices.
