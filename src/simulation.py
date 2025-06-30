@@ -9,7 +9,7 @@ import src.density_matrix as DM
 from src.random_unitary import random_energy_preserving_unitary
 
 
-def run(dm: DM.DensityMatrix, num_iterations: int, order_rule, first_10_order, sub_unitary, connectivity,
+def run(dm: DM.DensityMatrix, num_iterations: int, order_rule, first_10_order, NM_orders_list, sub_unitary, connectivity,
         Unitaries=None, return_all_dms=False, verbose=False):
     """
     Args:
@@ -122,12 +122,20 @@ def run(dm: DM.DensityMatrix, num_iterations: int, order_rule, first_10_order, s
 
         # Calculate the next order for iterations after 10
         previous_order = order
-        if i >= 9 and i < num_iterations:  # Up to but not including the last iteration
+        if i >= 9 and i < num_iterations:
             next_i = i + 1
-            if next_i >= 10:  # Only use order_rule for iterations >= 10
-                order = order_rule(previous_order, pops_values[i - 1], pops_values[i],
-                                   two_qubit_dms[i - 1], two_qubit_dms[i],
-                                   connectivity, sub_unitary, dm)
+            if next_i >= 10:
+                if NM_orders_list is not None and hasattr(order_rule,
+                                                          "__name__") and order_rule.__name__ == "NonMarkovian":
+                    order = order_rule(
+                        NM_orders_list,pops_values[i - 1],connectivity,time_step=i
+                    )
+                else:
+                    order = order_rule(
+                        previous_order, pops_values[i - 1], pops_values[i],
+                        two_qubit_dms[i - 1], two_qubit_dms[i],
+                        connectivity, sub_unitary, dm
+                    )
 
     # Return results based on whether all DMs were requested
     measurement_results = (pops_values, two_qubit_dms,three_qubit_dms,four_qubit_dms, five_qubit_dms,six_qubit_dms,seven_qubit_dms,eight_qubit_dms, orders_list)
