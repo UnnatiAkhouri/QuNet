@@ -847,7 +847,7 @@ def generate_markov_chain_non_markovian_string(length, transition_matrix=None):
             ('j', 'j'): {'j': 0.05, 'g': 0.95},
             ('j', 'g'): {'j': 0.1, 'g': 0.9},
             ('g', 'j'): {'j': 0.02, 'g': 0.98},
-            ('g', 'g'): {'j': 0.2, 'g': 0.8},
+            ('g', 'g'): {'j': 0.02, 'g': 0.98},
         }
 
     result = ['j', 'g']  # Start with initial characters
