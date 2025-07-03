@@ -48,7 +48,7 @@ def run(dm: DM.DensityMatrix, num_iterations: int, order_rule, first_10_order, N
     two_qubit_dms[0] = measure.two_qbit_dm_of_every_pair(dm)
     #three_qubit_dms[0] = measure.three_qbit_dm_of_every_triplet(dm)
     #four_qubit_dms[0] = measure.four_qbit_dm_of_every_quartet(dm)
-
+    num_qubits = len(measure.pops(dm))
     # Set up unitaries
     generate_random_unitary = False
     if type(Unitaries) == list:
@@ -70,13 +70,28 @@ def run(dm: DM.DensityMatrix, num_iterations: int, order_rule, first_10_order, N
         order = first_10_order[0] if first_10_order else []
 
     # Main evolution loop
-    for i in range(1, num_iterations + 1):
-        # Determine the order for partitioning
-        if i < 10:
-            order = first_10_order[i] if i < len(first_10_order) else order
+    if NM_orders_list is None:
+        for i in range(1, num_iterations + 1):
+            # Determine the order for partitioning
+            if i < 10:
+                order = first_10_order[i] if i < len(first_10_order) else order
 
-        # Store the current order
-        orders_list.append(order)
+            # Store the current order
+            orders_list.append(order)
+
+    if NM_orders_list is not None:
+        for i in range(1, num_iterations + 1):
+                # Determine the order for partitioning
+                if i < 10:
+                    pattern_dict = {
+                        'g': [[q, q + 1] for q in range(0, num_qubits - 1, 2)],
+                        'j': [[0, num_qubits - 1]] + [[i, i + 1] for i in range(1, num_qubits - 2, 2)]
+                    }
+                    letter = NM_orders_list[i]
+                    pairs = pattern_dict[letter]
+                    order = pairs
+                # Store the current order
+                orders_list.append(order)
 
         chunk_sizes = [len(chunk) for chunk in order]
         leftovers = dm.number_of_qbits % np.sum(chunk_sizes)
