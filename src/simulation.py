@@ -11,28 +11,10 @@ from src.random_unitary import random_energy_preserving_unitary
 
 def run(dm: DM.DensityMatrix, num_iterations: int, order_rule, first_10_order, NM_orders_list, sub_unitary, connectivity,
         Unitaries=None, return_all_dms=False, verbose=False):
-    """
-    Args:
-        dm: the density matrix to evolve
-        num_iterations: An integer representing the number of iterations the system will go through
-        order_rule: a function that takes (past_order, prev_pops, pops, two_qubit_dms_previous, two_qubit_dms_current, connectivity, sub_unitary)
-        first_10_order: order to use for the first 10 iterations
-        sub_unitary: parameter for the order rule
-        connectivity: parameter for the order rule
-        Unitaries: either a list of DMs, a single unitary, or None for random unitaries
-        return_all_dms: whether to return all intermediate density matrices
-        verbose: a float or false. Progress reporting frequency
-
-    Returns:
-        tuple of (measurement_results, final_dm) if return_all_dms=False,
-        or (measurement_results, list_of_all_dms) if return_all_dms=True
-    """
-    # Initialize storage for all density matrices if requested
     all_dms = []
     if return_all_dms:
-        all_dms.append(dm.copy())  # Store initial dm
+        all_dms.append(dm.copy())
 
-    # Initialize dictionaries for measurements
     pops_values = {}
     two_qubit_dms = {}
     three_qubit_dms = {}
@@ -41,15 +23,13 @@ def run(dm: DM.DensityMatrix, num_iterations: int, order_rule, first_10_order, N
     six_qubit_dms = {}
     seven_qubit_dms = {}
     eight_qubit_dms = {}
-    orders_list = []  # To store orders used at each step
+    orders_list = []
 
-    # Compute initial measurements
     pops_values[0] = {index: pop for index, pop in enumerate(measure.pops(dm))}
+    print
     two_qubit_dms[0] = measure.two_qbit_dm_of_every_pair(dm)
-    #three_qubit_dms[0] = measure.three_qbit_dm_of_every_triplet(dm)
-    #four_qubit_dms[0] = measure.four_qbit_dm_of_every_quartet(dm)
     num_qubits = len(measure.pops(dm))
-    # Set up unitaries
+
     generate_random_unitary = False
     if type(Unitaries) == list:
         assert len(Unitaries) == num_iterations, "There must be a unitary for each trial"
@@ -61,100 +41,170 @@ def run(dm: DM.DensityMatrix, num_iterations: int, order_rule, first_10_order, N
         generate_random_unitary = True
         print("using random unitaries")
 
-    # Initialize order to make sure it's defined
-    if 1 in range(10):
-        order = first_10_order[1]  # Get the first order
-    else:
-        # In case num_iterations <= 1, provide a default order
-        # You may need to adjust this based on your specific requirements
-        order = first_10_order[0] if first_10_order else []
-
-    # Main evolution loop
-    if NM_orders_list is None:
+    if NM_orders_list is not None and hasattr(order_rule, "__name__") and order_rule.__name__ == "NonMarkovian":
         for i in range(1, num_iterations + 1):
-            # Determine the order for partitioning
-            if i < 10:
-                order = first_10_order[i] if i < len(first_10_order) else order
-
-            # Store the current order
+            pattern_dict = {
+                'g': [[q, q + 1] for q in range(0, num_qubits - 1, 2)],
+                'j': [[0, num_qubits - 1]] + [[j, j + 1] for j in range(1, num_qubits - 2, 2)]
+            }
+            letter = NM_orders_list[i]
+            print(letter)
+            order = pattern_dict[letter]
+            print(order)
             orders_list.append(order)
 
-    if NM_orders_list is not None:
-        for i in range(1, num_iterations + 1):
-                # Determine the order for partitioning
-                if i < 10:
-                    pattern_dict = {
-                        'g': [[q, q + 1] for q in range(0, num_qubits - 1, 2)],
-                        'j': [[0, num_qubits - 1]] + [[i, i + 1] for i in range(1, num_qubits - 2, 2)]
-                    }
-                    letter = NM_orders_list[i]
-                    pairs = pattern_dict[letter]
-                    order = pairs
-                # Store the current order
-                orders_list.append(order)
-
-        chunk_sizes = [len(chunk) for chunk in order]
-        leftovers = dm.number_of_qbits % np.sum(chunk_sizes)
-        if leftovers:
-            leftover_identity = DM.Identity(DM.energy_basis(leftovers))
-
-        # Progress reporting
-        if verbose and i / num_iterations * 100 % verbose == 0:
-            percent = str(int(i / num_iterations * 100)).zfill(2)
-            print(f"{percent}%")
-
-        # Generate or select unitary
-        if generate_random_unitary:
-            U = DM.tensor([random_energy_preserving_unitary(chunk_size) for chunk_size in chunk_sizes])
+            chunk_sizes = [len(chunk) for chunk in order]
+            leftovers = dm.number_of_qbits % np.sum(chunk_sizes)
             if leftovers:
-                U = U.tensor(leftover_identity)
-        else:
-            U = Unitaries[i % num_unitaries]
+                leftover_identity = DM.Identity(DM.energy_basis(leftovers))
 
-        # Evolve the system
-        dm = step(dm, order, U, not generate_random_unitary)
+            if verbose and i / num_iterations * 100 % verbose == 0:
+                percent = str(int(i / num_iterations * 100)).zfill(2)
+                print(f"{percent}%")
 
-        # Store the evolved dm if requested
-        if return_all_dms:
-            all_dms.append(dm.copy())
+            if generate_random_unitary:
+                U = DM.tensor([random_energy_preserving_unitary(chunk_size) for chunk_size in chunk_sizes])
+                if leftovers:
+                    U = U.tensor(leftover_identity)
+            else:
+                U = Unitaries[i % num_unitaries]
 
-        # Always measure populations and two-qubit density matrices
-        # This ensures they're available for the order rule
-        pops_values[i] = {index: pop for index, pop in enumerate(measure.pops(dm))}
-        two_qubit_dms[i] = measure.two_qbit_dm_of_every_pair(dm)
+            dm = step(dm, order, U, not generate_random_unitary)
 
-        # Only compute additional measurements for the last 5 steps
-        if i > num_iterations - 5:
-            # You can add additional measurements here
+            if return_all_dms:
+                all_dms.append(dm.copy())
+
+            pops_values[i] = {index: pop for index, pop in enumerate(measure.pops(dm))}
             two_qubit_dms[i] = measure.two_qbit_dm_of_every_pair(dm)
-            three_qubit_dms[i] = measure.three_qbit_dm_of_every_triplet(dm)
-            four_qubit_dms[i] = measure.four_qbit_dm_of_every_quartet(dm)
-            five_qubit_dms[i] = measure.five_qbit_dm_of_every_quintet(dm)
-            six_qubit_dms[i] = measure.six_qbit_dm_of_every_sextet(dm)
-            seven_qubit_dms[i] = measure.seven_qbit_dm_of_every_seventet(dm)
-            eight_qubit_dms[i] = measure.eight_qbit_dm_of_every_octet(dm)
-            pass
 
-        # Calculate the next order for iterations after 10
-        previous_order = order
-        if i >= 9 and i < num_iterations:
-            next_i = i + 1
-            if next_i >= 10:
-                if NM_orders_list is not None and hasattr(order_rule,
-                                                          "__name__") and order_rule.__name__ == "NonMarkovian":
-                    order = order_rule(
-                        NM_orders_list,pops_values[i - 1],connectivity,time_step=i
-                    )
+            if i > num_iterations - 5:
+                two_qubit_dms[i] = measure.two_qbit_dm_of_every_pair(dm)
+                three_qubit_dms[i] = measure.three_qbit_dm_of_every_triplet(dm)
+                four_qubit_dms[i] = measure.four_qbit_dm_of_every_quartet(dm)
+                five_qubit_dms[i] = measure.five_qbit_dm_of_every_quintet(dm)
+                six_qubit_dms[i] = measure.six_qbit_dm_of_every_sextet(dm)
+                seven_qubit_dms[i] = measure.seven_qbit_dm_of_every_seventet(dm)
+                eight_qubit_dms[i] = measure.eight_qbit_dm_of_every_octet(dm)
+
+
+    else:
+
+        # Pre-calculate the order for the first step (i=1)
+
+        if num_iterations >= 1:
+            first_order = first_10_order[1] if 1 < len(first_10_order) else first_10_order[0]
+
+            orders_list.append(first_order)
+
+        for i in range(1, num_iterations + 1):
+
+            # Use the order that was calculated in the previous iteration
+
+            # (or pre-calculated for the first step)
+
+            if i <= len(orders_list):
+
+                order = orders_list[i - 1]  # orders_list is 0-indexed, steps are 1-indexed
+
+            else:
+
+                # Fallback (shouldn't happen if logic is correct)
+
+                order = first_10_order[0]
+
+            chunk_sizes = [len(chunk) for chunk in order]
+
+            leftovers = dm.number_of_qbits % np.sum(chunk_sizes)
+
+            if leftovers:
+                leftover_identity = DM.Identity(DM.energy_basis(leftovers))
+
+            if verbose and i / num_iterations * 100 % verbose == 0:
+                percent = str(int(i / num_iterations * 100)).zfill(2)
+
+                print(f"{percent}%")
+
+            if generate_random_unitary:
+
+                U = DM.tensor([random_energy_preserving_unitary(chunk_size) for chunk_size in chunk_sizes])
+
+                if leftovers:
+                    U = U.tensor(leftover_identity)
+
+            else:
+
+                U = Unitaries[i % num_unitaries]
+
+            # Apply the quantum evolution step
+
+            dm = step(dm, order, U, not generate_random_unitary)
+
+            if return_all_dms:
+                all_dms.append(dm.copy())
+
+            # NOW we have the new pops values for step i
+
+            pops_values[i] = {index: pop for index, pop in enumerate(measure.pops(dm))}
+
+            two_qubit_dms[i] = measure.two_qbit_dm_of_every_pair(dm)
+
+            if i > num_iterations - 5:
+                two_qubit_dms[i] = measure.two_qbit_dm_of_every_pair(dm)
+
+                three_qubit_dms[i] = measure.three_qbit_dm_of_every_triplet(dm)
+
+                four_qubit_dms[i] = measure.four_qbit_dm_of_every_quartet(dm)
+
+                five_qubit_dms[i] = measure.five_qbit_dm_of_every_quintet(dm)
+
+                six_qubit_dms[i] = measure.six_qbit_dm_of_every_sextet(dm)
+
+                seven_qubit_dms[i] = measure.seven_qbit_dm_of_every_seventet(dm)
+
+                eight_qubit_dms[i] = measure.eight_qbit_dm_of_every_octet(dm)
+
+            # Calculate the order for the NEXT step (i+1) using current and previous pops
+
+            if i < num_iterations:  # Only if there's a next step
+
+                next_step = i + 1
+
+                if next_step < 10:
+
+                    # For steps 2-9, use predefined orders
+
+                    next_order = first_10_order[next_step] if next_step < len(first_10_order) else first_10_order[0]
+
                 else:
-                    order = order_rule(
-                        previous_order, pops_values[i - 1], pops_values[i],
-                        two_qubit_dms[i - 1], two_qubit_dms[i],
-                        connectivity, sub_unitary, dm
+
+                    # For step 10 and beyond, use order_rule with current (i) and previous (i-1) pops
+
+                    next_order = order_rule(
+
+                        order,  # Current order that was just used
+
+                        pops_values[i - 1],  # Previous step pops
+
+                        pops_values[i],  # Current step pops (just calculated)
+
+                        two_qubit_dms[i - 1],  # Previous step two-qubit DMs
+
+                        two_qubit_dms[i],  # Current step two-qubit DMs (just calculated)
+
+                        connectivity,
+
+                        sub_unitary,
+
+                        dm
+
                     )
 
-    # Return results based on whether all DMs were requested
-    measurement_results = (pops_values, two_qubit_dms,three_qubit_dms,four_qubit_dms, five_qubit_dms,six_qubit_dms,seven_qubit_dms,eight_qubit_dms, orders_list)
-    #measurement_results = (pops_values, two_qubit_dms, orders_list)
+                orders_list.append(next_order)
+
+    measurement_results = (
+        pops_values, two_qubit_dms, three_qubit_dms, four_qubit_dms,
+        five_qubit_dms, six_qubit_dms, seven_qubit_dms, eight_qubit_dms, orders_list
+    )
 
     if return_all_dms:
         return measurement_results, all_dms
