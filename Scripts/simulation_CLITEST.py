@@ -129,6 +129,9 @@ def execute(file_name: str, connectivity, order_rule_name: str, unitary_energy_s
         sub_unitary = None
         match evolution_generator_type:
 
+            case "cliffordunitary":
+                sub_unitary = src.clifford_gates.create_random_clifford_gate()
+
             case "u1cliffordunitary":
                 sub_unitary = src.clifford_gates.create_random_u1_clifford_gate()
 
