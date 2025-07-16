@@ -1,63 +1,33 @@
-# For spin systems, operators can be represented as:
-# - Dense matrices (small systems)
-# - Sparse matrices (medium systems)
-# - Matrix Product Operators (large systems)
+
 import numpy as np
 from scipy.linalg import expm
-
-import numpy as np
-from itertools import product
-from typing import List, Tuple, Dict
+from itertools import product, combinations
+from typing import List, Tuple, Dict, Optional
 import time
+import csv
 import matplotlib.pyplot as plt
+from matplotlib.colors import LinearSegmentedColormap
+import random
 
-class KrylovComplexity:
-    def __init__(self, hamiltonian, dt, O0):
-        # Set Hamiltonian
-        self.H = hamiltonian
-
-        # Set time step interval
-        self.dt = dt
-
-        # Set initial operator
-        self.O0 = O0
-
-        # Generate unitary evolution operator
-        self.U = expm(-1j * hamiltonian * dt)
-
-    def apply_unitary(self, operator):
-        """Apply unitary: U†OU"""
-        return self.U.conj().T @ operator @ self.U
-    
-    def inner_product(self, op1, op2):
-        """Hilbert-Schmidt inner product"""
-        return np.trace(op1.conj().T @ op2) / op1.shape[0]
-    
-    def norm(self, operator):
-        """Operator norm"""
-        return np.sqrt(np.real(self.inner_product(operator, operator)))
+# Global constants
+WEIGHT_THRESHOLD = 1e-30
+PASTEL_COLORS = [
+    '#FFB3BA', '#FFDFBA', '#FFFFBA', '#BAFFC9', '#BAE1FF',
+    '#E1BAFF', '#FFBAE1', '#C9FFBA', '#BAD4FF', '#FFDCBA'
+]
 
 
 class QuantumOperatorAnalyzer:
-    """
-    A class for analyzing operator spreading in quantum circuits.
-    """
+    """Efficient analyzer for operator spreading in quantum circuits."""
 
-    def __init__(self, n_qubits: int, symmetry: str = None):
-        """
-        Initialize the analyzer for n qubits.
-
-        Args:
-            n_qubits: Number of qubits in the system
-            symmetry: Symmetry type ('Z2', 'U1', or None)
-        """
+    def __init__(self, n_qubits: int, symmetry: Optional[str] = None):
         self.n_qubits = n_qubits
         self.symmetry = symmetry
-        self.pauli_basis = self._generate_pauli_basis()
         self.pauli_matrices = self._get_pauli_matrices()
+        self.pauli_basis = self._generate_pauli_basis()
 
-        # Only pre-compute for small systems
-        if len(self.pauli_basis) < 5000:  # Only for manageable sizes
+        # Only pre-compute for small systems to avoid memory issues
+        if len(self.pauli_basis) < 5000:
             self._precompute_optimization_data()
         else:
             print(f"Skipping pre-computation for large basis ({len(self.pauli_basis):,} states)")
@@ -72,89 +42,14 @@ class QuantumOperatorAnalyzer:
             'Z': np.array([[1, 0], [0, -1]], dtype=complex)
         }
 
-    def _precompute_optimization_data(self):
-        """Pre-compute data structures for optimization."""
-        print(f"Pre-computing optimization data for {len(self.pauli_basis):,} Pauli strings...")
-        start_time = time.time()
-
-        # Pre-compute all Pauli matrices as a 3D tensor
-        dim = 2 ** self.n_qubits
-        self.pauli_tensor = np.zeros((len(self.pauli_basis), dim, dim), dtype=complex)
-
-        for i, pauli_string in enumerate(self.pauli_basis):
-            self.pauli_tensor[i] = self.pauli_string_to_matrix(pauli_string)
-
-        print(f"Pre-computation completed in {time.time() - start_time:.2f}s")
-
-    def compute_overlap_vectorized(self, operator: np.ndarray, verbose: bool = False) -> np.ndarray:
-        """
-        Vectorized overlap computation using Einstein summation.
-        Falls back to batched computation for large systems.
-        """
-        if self.pauli_tensor is None:
-            if verbose:
-                print("Pre-computed tensor not available, using batched computation...")
-            return self.compute_overlap_batched(operator, verbose=verbose)
-
-        if verbose:
-            print(f"Computing {len(self.pauli_basis):,} overlaps (vectorized)...")
-            start_time = time.time()
-
-        # Vectorized trace computation: trace(O @ P_i) for all i
-        overlaps = np.einsum('ij,kji->k', operator, self.pauli_tensor)
-
-        if verbose:
-            total_time = time.time() - start_time
-            print(f"Vectorized computation completed in {total_time:.3f}s")
-
-        return overlaps
-
-    def compute_overlap_batched(self, operator: np.ndarray, batch_size: int = 1000,
-                                verbose: bool = False) -> np.ndarray:
-        """
-        Batched computation to balance speed and memory.
-        This is the recommended method for large systems.
-        """
-        if verbose:
-            print(f"Computing {len(self.pauli_basis):,} overlaps (batched, size={batch_size})...")
-            start_time = time.time()
-
-        overlaps = np.zeros(len(self.pauli_basis), dtype=complex)
-        n_batches = (len(self.pauli_basis) + batch_size - 1) // batch_size
-
-        for batch_idx in range(n_batches):
-            start_idx = batch_idx * batch_size
-            end_idx = min((batch_idx + 1) * batch_size, len(self.pauli_basis))
-
-            if verbose and batch_idx % 5 == 0:
-                progress = 100 * start_idx / len(self.pauli_basis)
-                elapsed = time.time() - start_time
-                print(f"  Batch {batch_idx + 1}/{n_batches}: {progress:.1f}% ({elapsed:.1f}s)")
-
-            # Compute overlaps for this batch (no pre-computation)
-            for i in range(start_idx, end_idx):
-                pauli_matrix = self.pauli_string_to_matrix(self.pauli_basis[i])
-                overlaps[i] = (1/len(operator))*(np.trace(operator @ pauli_matrix))
-
-        if verbose:
-            total_time = time.time() - start_time
-            print(f"Batched computation completed in {total_time:.3f}s")
-
-        return overlaps
-
     def _generate_pauli_basis(self) -> List[str]:
-        """
-        Generate Pauli strings respecting symmetries efficiently.
-
-        Returns:
-            List of Pauli strings respecting the specified symmetry
-        """
+        """Generate Pauli strings respecting symmetries."""
         if self.symmetry is None:
             return self._generate_full_basis()
         elif self.symmetry == 'Z2':
-            return self._generate_z2_basis_direct()
+            return self._generate_z2_basis()
         elif self.symmetry == 'U1':
-            return self._generate_u1_basis_direct()
+            return self._generate_u1_basis()
         else:
             raise ValueError(f"Unknown symmetry: {self.symmetry}")
 
@@ -163,17 +58,11 @@ class QuantumOperatorAnalyzer:
         pauli_chars = ['I', 'X', 'Y', 'Z']
         return [''.join(p) for p in product(pauli_chars, repeat=self.n_qubits)]
 
-    def _generate_z2_basis_direct(self) -> List[str]:
-        """
-        Generate only Z2-symmetric Pauli strings (even X+Y count) directly.
-
-        Returns:
-            List of Z2-symmetric Pauli strings
-        """
+    def _generate_z2_basis(self) -> List[str]:
+        """Generate Z2-symmetric Pauli strings (even X+Y count)."""
         pauli_chars = ['I', 'X', 'Y', 'Z']
         z2_strings = []
 
-        # Generate only strings with even X+Y count
         for pauli_tuple in product(pauli_chars, repeat=self.n_qubits):
             xy_count = pauli_tuple.count('X') + pauli_tuple.count('Y')
             if xy_count % 2 == 0:
@@ -181,20 +70,9 @@ class QuantumOperatorAnalyzer:
 
         return z2_strings
 
-    def _generate_u1_basis_direct(self) -> List[str]:
-        """
-        Generate only U1-symmetric Pauli strings (equal X and Y count) directly.
-
-        Uses combinatorial enumeration for efficiency.
-
-        Returns:
-            List of U1-symmetric Pauli strings
-        """
-        from itertools import combinations
-
+    def _generate_u1_basis(self) -> List[str]:
+        """Generate U1-symmetric Pauli strings (equal X and Y count)."""
         u1_strings = []
-
-        # For each possible number of X's (and equal Y's)
         max_xy_pairs = self.n_qubits // 2
 
         for num_x in range(max_xy_pairs + 1):
@@ -214,8 +92,6 @@ class QuantumOperatorAnalyzer:
 
                     # For each way to assign I and Z to remaining positions
                     for num_i in range(len(iz_positions) + 1):
-                        num_z = len(iz_positions) - num_i
-
                         # Choose positions for I's from I/Z positions
                         for i_positions in combinations(iz_positions, num_i):
                             z_positions = [i for i in iz_positions if i not in i_positions]
@@ -229,47 +105,26 @@ class QuantumOperatorAnalyzer:
                                 pauli_string[pos] = 'Y'
                             for pos in z_positions:
                                 pauli_string[pos] = 'Z'
-                            # I positions already set
 
                             u1_strings.append(''.join(pauli_string))
 
         return u1_strings
 
-    def _filter_z2_symmetric(self, pauli_strings: List[str]) -> List[str]:
-        """
-        Filter Pauli strings with even number of X+Y operators (Z2 symmetry).
-        DEPRECATED: Use _generate_z2_basis_direct() instead.
-        """
-        filtered = []
-        for s in pauli_strings:
-            xy_count = s.count('X') + s.count('Y')
-            if xy_count % 2 == 0:
-                filtered.append(s)
-        return filtered
+    def _precompute_optimization_data(self):
+        """Pre-compute data structures for optimization."""
+        print(f"Pre-computing optimization data for {len(self.pauli_basis):,} Pauli strings...")
+        start_time = time.time()
 
-    def _filter_u1_symmetric(self, pauli_strings: List[str]) -> List[str]:
-        """
-        Filter Pauli strings with equal number of X and Y operators (U1 symmetry).
-        DEPRECATED: Use _generate_u1_basis_direct() instead.
-        """
-        filtered = []
-        for s in pauli_strings:
-            x_count = s.count('X')
-            y_count = s.count('Y')
-            if x_count == y_count:
-                filtered.append(s)
-        return filtered
+        dim = 2 ** self.n_qubits
+        self.pauli_tensor = np.zeros((len(self.pauli_basis), dim, dim), dtype=complex)
+
+        for i, pauli_string in enumerate(self.pauli_basis):
+            self.pauli_tensor[i] = self.pauli_string_to_matrix(pauli_string)
+
+        print(f"Pre-computation completed in {time.time() - start_time:.2f}s")
 
     def pauli_string_to_matrix(self, pauli_string: str) -> np.ndarray:
-        """
-        Convert a Pauli string to its matrix representation.
-
-        Args:
-            pauli_string: String of Pauli operators (e.g., 'XYZ')
-
-        Returns:
-            Matrix representation of the Pauli string
-        """
+        """Convert a Pauli string to its matrix representation."""
         if len(pauli_string) != self.n_qubits:
             raise ValueError(f"Pauli string length must be {self.n_qubits}")
 
@@ -278,76 +133,72 @@ class QuantumOperatorAnalyzer:
             result = np.kron(result, self.pauli_matrices[pauli_char])
         return result
 
-    def apply_unitary_to_operator(self, operator: np.ndarray, unitary: np.ndarray) -> np.ndarray:
-        """
-        Apply unitary evolution to an operator: U † O U.
-
-        Args:
-            operator: The operator to evolve
-            unitary: The unitary operator
-
-        Returns:
-            Evolved operator
-        """
-        return unitary.conj().T @ operator @ unitary
-
-    def compute_overlap_with_pauli_basis(self, operator: np.ndarray, verbose: bool = False) -> np.ndarray:
-        """
-        Compute overlaps Tr[O P_i] for all Pauli strings P_i.
-
-        Args:
-            operator: The operator to analyze
-            verbose: Print progress for debugging
-
-        Returns:
-            Array of overlaps with each Pauli string
-        """
-        overlaps = np.zeros(len(self.pauli_basis), dtype=complex)
-        total_basis = len(self.pauli_basis)
+    def compute_overlap_vectorized(self, operator: np.ndarray, verbose: bool = False) -> np.ndarray:
+        """Vectorized overlap computation using Einstein summation."""
+        if self.pauli_tensor is None:
+            if verbose:
+                print("Pre-computed tensor not available, using batched computation...")
+            return self.compute_overlap_batched(operator, verbose=verbose)
 
         if verbose:
-            print(f"Computing {total_basis:,} overlaps...")
+            print(f"Computing {len(self.pauli_basis):,} overlaps (vectorized)...")
+            start_time = time.time()
 
-        for i, pauli_string in enumerate(self.pauli_basis):
-            if verbose and i % 5000 == 0:
-                print(f"  Progress: {i:,}/{total_basis:,} ({100 * i / total_basis:.1f}%)")
-
-            pauli_matrix = self.pauli_string_to_matrix(pauli_string)
-            overlaps[i] = 1/(total_basis)*(np.trace(operator @ pauli_matrix))
+        # Vectorized trace computation: trace(O @ P_i) for all i
+        # Normalize by Hilbert space dimension
+        d = operator.shape[0]
+        overlaps = np.einsum('ij,kji->k', operator, self.pauli_tensor) / d
 
         if verbose:
-            print(f"  Completed: {total_basis:,}/{total_basis:,} (100.0%)")
+            total_time = time.time() - start_time
+            print(f"Vectorized computation completed in {total_time:.3f}s")
 
         return overlaps
 
+    def compute_overlap_batched(self, operator: np.ndarray, batch_size: int = 1000,
+                                verbose: bool = False) -> np.ndarray:
+        """Batched computation for large systems."""
+        if verbose:
+            print(f"Computing {len(self.pauli_basis):,} overlaps (batched, size={batch_size})...")
+            start_time = time.time()
+
+        overlaps = np.zeros(len(self.pauli_basis), dtype=complex)
+        n_batches = (len(self.pauli_basis) + batch_size - 1) // batch_size
+        d = operator.shape[0]  # Hilbert space dimension
+
+        for batch_idx in range(n_batches):
+            start_idx = batch_idx * batch_size
+            end_idx = min((batch_idx + 1) * batch_size, len(self.pauli_basis))
+
+            if verbose and batch_idx % 5 == 0:
+                progress = 100 * start_idx / len(self.pauli_basis)
+                elapsed = time.time() - start_time
+                print(f"  Batch {batch_idx + 1}/{n_batches}: {progress:.1f}% ({elapsed:.1f}s)")
+
+            # Compute overlaps for this batch
+            for i in range(start_idx, end_idx):
+                pauli_matrix = self.pauli_string_to_matrix(self.pauli_basis[i])
+                overlaps[i] = np.trace(operator @ pauli_matrix) / d
+
+        if verbose:
+            total_time = time.time() - start_time
+            print(f"Batched computation completed in {total_time:.3f}s")
+
+        return overlaps
+
+    def apply_unitary_to_operator(self, operator: np.ndarray, unitary: np.ndarray) -> np.ndarray:
+        """Apply unitary evolution: U† O U."""
+        return unitary.conj().T @ operator @ unitary
+
     def compute_weight_distribution(self, overlaps: np.ndarray) -> np.ndarray:
-        """
-        Compute the weight distribution from overlaps.
-
-        Args:
-            overlaps: Complex overlaps with Pauli basis
-
-        Returns:
-            Real-valued weight distribution
-        """
+        """Compute weight distribution from overlaps."""
         return np.abs(overlaps) ** 2
 
     def evolve_operator(self, initial_pauli_string: str, unitaries: List[np.ndarray],
-                        time_steps: int, verbose: bool = False, method: str = 'vectorized') -> Tuple[
-        List[np.ndarray], List[np.ndarray], List[np.ndarray]]:
-        """
-        Time evolve an initial Pauli operator and track its spreading.
+                        time_steps: int, verbose: bool = False,
+                        method: str = 'vectorized') -> Tuple[List[np.ndarray], List[np.ndarray], List[np.ndarray]]:
+        """Time evolve an initial Pauli operator and track its spreading."""
 
-        Args:
-            initial_pauli_string: Initial Pauli string
-            unitaries: List of unitaries to apply cyclically
-            time_steps: Number of time steps to evolve
-            verbose: Print progress for debugging
-            method: Computation method ('vectorized', 'batched', or 'original')
-
-        Returns:
-            Tuple of (evolved_operators, overlaps_per_time, weights_per_time)
-        """
         if verbose:
             print(f"Starting evolution using {method} method")
             print(f"System: {self.n_qubits} qubits, {len(self.pauli_basis):,} basis states")
@@ -357,16 +208,11 @@ class QuantumOperatorAnalyzer:
             overlap_func = self.compute_overlap_vectorized
         elif method == 'batched':
             overlap_func = self.compute_overlap_batched
-        elif method == 'original':
-            overlap_func = self.compute_overlap_with_pauli_basis
         else:
             raise ValueError(f"Unknown method: {method}")
 
         # Initialize with the initial Pauli operator
         current_operator = self.pauli_string_to_matrix(initial_pauli_string)
-
-        if verbose:
-            print(f"Operator matrix size: {current_operator.shape}")
 
         # Storage for results
         evolved_operators = [current_operator.copy()]
@@ -387,17 +233,12 @@ class QuantumOperatorAnalyzer:
 
             # Apply unitary cyclically
             unitary = unitaries[t % len(unitaries)]
-            if verbose:
-                print(f"Applying unitary {(t % len(unitaries)) + 1}/{len(unitaries)}")
-
             current_operator = self.apply_unitary_to_operator(current_operator, unitary)
 
             # Store evolved operator
             evolved_operators.append(current_operator.copy())
 
             # Compute overlaps and weights
-            if verbose:
-                print(f"Computing overlaps for step {t + 1}...")
             overlaps = overlap_func(current_operator, verbose=verbose)
             weights = self.compute_weight_distribution(overlaps)
 
@@ -411,124 +252,195 @@ class QuantumOperatorAnalyzer:
 
 
 class GramSchmidtOrthogonalizer:
-    """
-    A class for Gram-Schmidt orthogonalization of evolved operators.
-    """
+    """Gram-Schmidt orthogonalization for evolved operators."""
 
-    def __init__(self, analyzer):
-        """
-        Initialize with a quantum operator analyzer.
-
-        Args:
-            analyzer: QuantumOperatorAnalyzer instance
-        """
+    def __init__(self, analyzer: QuantumOperatorAnalyzer):
         self.analyzer = analyzer
 
-    def vectorize_operator(self, operator: np.ndarray) -> np.ndarray:
-        """Vectorize an operator matrix for orthogonalization."""
-        return operator.flatten()
+    def robust_modified_gram_schmidt(self, operators: List[np.ndarray]) -> List[np.ndarray]:
+        """Robust modified Gram-Schmidt orthogonalization."""
+        d = operators[0].shape[0]
+        orthogonal_ops = []
 
-    def matrix_from_vector(self, vector: np.ndarray) -> np.ndarray:
-        """Reconstruct matrix from vectorized form."""
-        dim = int(np.sqrt(len(vector)))
-        return vector.reshape(dim, dim)
+        for i, op in enumerate(operators):
+            v = op.copy()
 
-    def gram_schmidt_orthogonalization(self, operators: List[np.ndarray]) -> Tuple[List[np.ndarray], np.ndarray, np.ndarray]:
-        """
-        Perform Gram-Schmidt orthogonalization on a list of operators.
+            # Modified GS: orthogonalize against each previous vector
+            for k in orthogonal_ops:
+                proj = np.trace(k.conj().T @ v) / d
+                v = v - proj * k
 
-        Args:
-            operators: List of operator matrices
+            norm = np.sqrt(np.real(np.trace(v.conj().T @ v)) / d)
 
-        Returns:
-            Tuple of (orthogonal_operators, transformation_matrix, coefficients_matrix)
-        """
-        # Vectorize all operators
-        vectors = [self.vectorize_operator(op) for op in operators]
-        n_ops = len(vectors)
-        dim = len(vectors[0])
+            # Check if norm is large enough
+            if norm > 1e-12:
+                v = v / norm
 
-        # Initialize orthogonal vectors and coefficient matrices
-        orthogonal_vectors = []
-        transformation_matrix = np.zeros((n_ops, n_ops), dtype=complex)
-        coefficients_matrix = np.zeros((n_ops, n_ops), dtype=complex)
+                # Verify orthogonality
+                max_overlap = 0.0
+                for j, k in enumerate(orthogonal_ops):
+                    overlap = abs(np.trace(k.conj().T @ v) / d)
+                    max_overlap = max(max_overlap, overlap)
 
-        for i in range(n_ops):
-            # Start with current vector
-            current_vector = vectors[i].copy()
-            coefficients = np.zeros(n_ops, dtype=complex)
-            coefficients[i] = 1  # Initially, the vector is itself
+                # Accept only if truly orthogonal
+                if max_overlap < 1e-10:
+                    orthogonal_ops.append(v)
+                    print(f"✓ Kept operator {i} (norm={norm:.3e}, max_overlap={max_overlap:.3e})")
+                else:
+                    print(f"✗ Rejected operator {i}: max_overlap={max_overlap:.3e} > 1e-10")
+            else:
+                print(f"✗ Dropped operator {i}: norm={norm:.3e} too small")
 
-            # Subtract projections onto previous orthogonal vectors
-            for j in range(len(orthogonal_vectors)):
-                projection = np.vdot(orthogonal_vectors[j], current_vector)
-                current_vector = current_vector - projection * orthogonal_vectors[j]
-                coefficients -= projection * coefficients_matrix[j]
-
-            # Normalize
-            norm = np.linalg.norm(current_vector)
-            if norm > 1e-12:  # Avoid division by zero
-                current_vector = current_vector / norm
-                coefficients = coefficients / norm
-                orthogonal_vectors.append(current_vector)
-
-                # Store transformation coefficients
-                for j in range(len(orthogonal_vectors)):
-                    transformation_matrix[i, j] = np.vdot(orthogonal_vectors[j], vectors[i])
-
-                # Save the linear combination coefficients
-                coefficients_matrix[i] = coefficients
-
-        # Convert back to operator matrices
-        orthogonal_operators = [self.matrix_from_vector(vec) for vec in orthogonal_vectors]
-
-        return orthogonal_operators, transformation_matrix, coefficients_matrix
+        return orthogonal_ops
 
     def express_in_orthogonal_basis(self, operators: List[np.ndarray],
-                                    orthogonal_operators: List[np.ndarray]) -> List[np.ndarray]:
-        """
-        Express operators in the orthogonal basis.
-
-        Args:
-            operators: List of operators to express
-            orthogonal_operators: Orthogonal basis operators
-
-        Returns:
-            List of coefficient arrays for each operator
-        """
-        orthogonal_vectors = [self.vectorize_operator(op) for op in orthogonal_operators]
-
+                                    orthogonal_operators: List[np.ndarray]) -> List[List[complex]]:
+        """Express operators in orthogonal basis."""
+        d = operators[0].shape[0]
         coefficients_list = []
+
         for operator in operators:
-            op_vector = self.vectorize_operator(operator)
-            coefficients = np.zeros(len(orthogonal_vectors), dtype=complex)
-
-            for i, ortho_vec in enumerate(orthogonal_vectors):
-                coefficients[i] = np.vdot(ortho_vec, op_vector)
-
-            coefficients_list.append(coefficients)
+            coeff_per_op = []
+            for Kj in orthogonal_operators:
+                coeff = np.trace(Kj.conj().T @ operator) / d
+                coeff_per_op.append(coeff)
+            coefficients_list.append(coeff_per_op)
 
         return coefficients_list
 
 
+# Circuit construction utilities
+def create_partial_swap_gate(theta: float) -> np.ndarray:
+    """Create a partial SWAP gate with parameter theta."""
+    return np.array([
+        [1, 0, 0, 0],
+        [0, np.cos(theta), 1j * np.sin(theta), 0],
+        [0, 1j * np.sin(theta), np.cos(theta), 0],
+        [0, 0, 0, 1]
+    ], dtype=complex)
+
+
+def embed_two_qubit_gate(gate: np.ndarray, i: int, j: int, n: int) -> np.ndarray:
+    """Embed a 2-qubit gate into an n-qubit system."""
+    if i >= j or i < 0 or j >= n:
+        raise ValueError(f"Invalid qubit pair ({i}, {j}) for {n} qubits")
+
+    # Create permutation to move qubits i,j to positions 0,1
+    qubit_order = [i, j] + [q for q in range(n) if q != i and q != j]
+    inv_order = np.argsort(qubit_order)
+    dim = 2 ** n
+
+    def permute_basis(order):
+        perm = np.zeros((dim, dim), dtype=complex)
+        for k in range(dim):
+            bits = [(k >> l) & 1 for l in range(n)]
+            permuted = [bits[order[m]] for m in range(n)]
+            idx = sum([b << l for l, b in enumerate(permuted)])
+            perm[idx, k] = 1
+        return perm
+
+    P = permute_basis(qubit_order)
+    P_inv = permute_basis(inv_order)
+
+    # Gate acts on first two qubits
+    op = np.kron(gate, np.eye(2 ** (n - 2), dtype=complex))
+    return P_inv @ op @ P
+
+
+def create_brickwork_unitaries(n_qubits: int, theta: float) -> List[np.ndarray]:
+    """Create brickwork circuit unitaries."""
+    if n_qubits % 2 != 0:
+        print(f"Warning: {n_qubits} is odd. Last qubit will not participate in all gates.")
+
+    pswap = create_partial_swap_gate(theta)
+
+    # Even layer: (0,1), (2,3), (4,5), (6,7)
+    U_even = np.eye(2 ** n_qubits, dtype=complex)
+    for i in range(0, n_qubits - 1, 2):
+        gate_full = embed_two_qubit_gate(pswap, i, i + 1, n_qubits)
+        U_even = gate_full @ U_even
+
+    # Odd layer: (1,2), (3,4), (5,6), (7,8)
+    U_odd = np.eye(2 ** n_qubits, dtype=complex)
+    for i in range(1, n_qubits - 1, 2):
+        gate_full = embed_two_qubit_gate(pswap, i, i + 1, n_qubits)
+        U_odd = gate_full @ U_odd
+
+    return [U_even, U_odd]
+
+
+def create_general_circuit_unitaries(n_qubits: int, circuit_structure: List[List[Tuple[int, int]]],
+                                     theta: float) -> List[np.ndarray]:
+    """Create unitaries for general circuit structures."""
+    pswap = create_partial_swap_gate(theta)
+    unitaries = []
+
+    for pairs in circuit_structure:
+        U = np.eye(2 ** n_qubits, dtype=complex)
+        for pair in pairs:
+            gate_full = embed_two_qubit_gate(pswap, pair[0], pair[1], n_qubits)
+            U = gate_full @ U
+        unitaries.append(U)
+
+    return unitaries
+
+
+def generate_nonmarkovian_circuit_unitaries(n_qubits: int, pattern_string: str,
+                                            theta: float) -> List[np.ndarray]:
+    """Generate unitaries for non-Markovian circuits."""
+    pattern_dict = {
+        'j': [(i, i + 1) for i in range(0, n_qubits - 1, 2)],  # even pairs
+        'g': [(i, i + 1) for i in range(1, n_qubits - 1, 2)]  # odd pairs
+    }
+
+    pswap = create_partial_swap_gate(theta)
+    unitaries = []
+
+    for letter in pattern_string:
+        if letter not in pattern_dict:
+            raise ValueError(f"Unknown pattern letter: {letter}")
+
+        pairs = pattern_dict[letter]
+        U = np.eye(2 ** n_qubits, dtype=complex)
+        for i, j in pairs:
+            gate_full = embed_two_qubit_gate(pswap, i, j, n_qubits)
+            U = gate_full @ U
+        unitaries.append(U)
+
+    return unitaries
+
+
+def generate_markov_chain_non_markovian_string(length: int,
+                                               transition_matrix: Optional[Dict] = None) -> str:
+    """Generate a non-Markovian string using a Markov chain with memory."""
+    if transition_matrix is None:
+        transition_matrix = {
+            ('j', 'j'): {'j': 0.05, 'g': 0.95},
+            ('j', 'g'): {'j': 0.1, 'g': 0.9},
+            ('g', 'j'): {'j': 0.02, 'g': 0.98},
+            ('g', 'g'): {'j': 0.02, 'g': 0.98},
+        }
+
+    if length < 2:
+        return 'jg'[:length]
+
+    result = ['j', 'g']  # Start with initial characters
+    for _ in range(length - 2):
+        last_two = tuple(result[-2:])
+        probabilities = transition_matrix.get(last_two, {'j': 0.5, 'g': 0.5})
+        next_char = random.choices(list(probabilities.keys()),
+                                   weights=list(probabilities.values()))[0]
+        result.append(next_char)
+
+    return ''.join(result)
+
+
+# Analysis functions
 def analyze_operator_spreading(n_qubits: int, initial_pauli_string: str,
                                unitaries: List[np.ndarray], time_steps: int,
-                               symmetry: str = None, verbose: bool = False, method: str = 'vectorized'):
-    """
-    Main function to analyze operator spreading.
-
-    Args:
-        n_qubits: Number of qubits
-        initial_pauli_string: Initial Pauli operator
-        unitaries: List of unitaries for time evolution
-        time_steps: Number of evolution steps
-        symmetry: Symmetry type ('Z2', 'U1', or None)
-        verbose: Print progress for debugging
-        method: Computation method ('vectorized', 'batched', or 'original')
-
-    Returns:
-        Dictionary containing all analysis results
-    """
+                               symmetry: Optional[str] = None, verbose: bool = False,
+                               method: str = 'vectorized') -> Dict:
+    """Main function to analyze operator spreading."""
     # Initialize analyzer
     analyzer = QuantumOperatorAnalyzer(n_qubits, symmetry)
 
@@ -552,119 +464,13 @@ def analyze_operator_spreading(n_qubits: int, initial_pauli_string: str,
     }
 
 
-# Example usage functions with optimization options
-def analyze_with_z2_symmetry(n_qubits: int, initial_pauli_string: str,
-                             unitaries: List[np.ndarray], time_steps: int,
-                             verbose: bool = False, method: str = 'vectorized'):
-    """Analyze with Z2 symmetry (even X+Y count)."""
-    return analyze_operator_spreading(n_qubits, initial_pauli_string,
-                                      unitaries, time_steps, symmetry='Z2',
-                                      verbose=verbose, method=method)
-
-
-def analyze_with_u1_symmetry(n_qubits: int, initial_pauli_string: str,
-                             unitaries: List[np.ndarray], time_steps: int,
-                             verbose: bool = False, method: str = 'vectorized'):
-    """Analyze with U1 symmetry (equal X and Y count)."""
-    return analyze_operator_spreading(n_qubits, initial_pauli_string,
-                                      unitaries, time_steps, symmetry='U1',
-                                      verbose=verbose, method=method)
-
-
-# Efficiency comparison function
-def compare_basis_generation_efficiency():
-    """
-    Compare efficiency of direct generation vs filtering approaches.
-    """
-    print("=== Basis Generation Efficiency Comparison ===\n")
-
-    import time
-
-    for n_qubits in [6, 8, 10]:
-        print(f"N = {n_qubits} qubits:")
-
-        # Full basis size
-        full_size = 4 ** n_qubits
-        print(f"  Full basis size: {full_size:,}")
-
-        # Z2 symmetry comparison
-        print("  Z2 Symmetry:")
-
-        # Direct generation timing
-        start_time = time.time()
-        analyzer_z2_direct = QuantumOperatorAnalyzer(n_qubits, symmetry='Z2')
-        z2_direct_time = time.time() - start_time
-        z2_size = len(analyzer_z2_direct.pauli_basis)
-
-        print(f"    Direct generation: {z2_size:,} strings in {z2_direct_time:.4f}s")
-        print(f"    Reduction factor: {full_size / z2_size:.1f}x")
-
-        # U1 symmetry
-        print("  U1 Symmetry:")
-        start_time = time.time()
-        analyzer_u1_direct = QuantumOperatorAnalyzer(n_qubits, symmetry='U1')
-        u1_direct_time = time.time() - start_time
-        u1_size = len(analyzer_u1_direct.pauli_basis)
-
-        print(f"    Direct generation: {u1_size:,} strings in {u1_direct_time:.4f}s")
-        print(f"    Reduction factor: {full_size / u1_size:.1f}x")
-        print()
-
-
-# Updated demonstration function
-def demonstrate_symmetry_benefits():
-    """
-    Demonstrate the computational benefits of using symmetries with direct generation.
-    """
-    n_qubits = 8
-
-    print(f"=== Symmetry Benefits for {n_qubits} Qubits ===\n")
-
-    # Without symmetry
-    analyzer_full = QuantumOperatorAnalyzer(n_qubits)
-    print(f"Full basis size: {len(analyzer_full.pauli_basis):,} = 4^{n_qubits}")
-
-    # With Z2 symmetry
-    analyzer_z2 = QuantumOperatorAnalyzer(n_qubits, symmetry='Z2')
-    print(f"Z2 basis size: {len(analyzer_z2.pauli_basis):,}")
-
-    # With U1 symmetry
-    analyzer_u1 = QuantumOperatorAnalyzer(n_qubits, symmetry='U1')
-    print(f"U1 basis size: {len(analyzer_u1.pauli_basis):,}")
-
-    print(f"\nMemory reduction factors:")
-    print(f"Z2: {len(analyzer_full.pauli_basis) / len(analyzer_z2.pauli_basis):.1f}x")
-    print(f"U1: {len(analyzer_full.pauli_basis) / len(analyzer_u1.pauli_basis):.1f}x")
-
-    print(f"\nExample Z2 strings (first 10):")
-    for i, s in enumerate(analyzer_z2.pauli_basis[:10]):
-        xy_count = s.count('X') + s.count('Y')
-        print(f"  {s} (X+Y count: {xy_count})")
-
-    print(f"\nExample U1 strings (first 10):")
-    for i, s in enumerate(analyzer_u1.pauli_basis[:10]):
-        x_count = s.count('X')
-        y_count = s.count('Y')
-        print(f"  {s} (X: {x_count}, Y: {y_count})")
-
-
 def orthogonalize_evolved_operators(evolved_operators: List[np.ndarray],
-                                    analyzer: QuantumOperatorAnalyzer):
-    """
-    Perform Gram-Schmidt orthogonalization on evolved operators.
-
-    Args:
-        evolved_operators: List of evolved operator matrices
-        analyzer: QuantumOperatorAnalyzer instance
-
-    Returns:
-        Dictionary containing orthogonalization results
-    """
-    # Initialize orthogonalizer
+                                    analyzer: QuantumOperatorAnalyzer) -> Dict:
+    """Perform Gram-Schmidt orthogonalization on evolved operators."""
     orthogonalizer = GramSchmidtOrthogonalizer(analyzer)
 
-    # Perform Gram-Schmidt orthogonalization (now returns 3 values)
-    orthogonal_ops, transform_matrix, coefficients_matrix = orthogonalizer.gram_schmidt_orthogonalization(evolved_operators)
+    # Perform orthogonalization
+    orthogonal_ops = orthogonalizer.robust_modified_gram_schmidt(evolved_operators)
 
     # Express original operators in orthogonal basis
     coefficients = orthogonalizer.express_in_orthogonal_basis(
@@ -673,371 +479,18 @@ def orthogonalize_evolved_operators(evolved_operators: List[np.ndarray],
 
     return {
         'orthogonal_operators': orthogonal_ops,
-        'transformation_matrix': transform_matrix,
-        'coefficients_in_orthogonal_basis': coefficients,
-        'gs_in_original_coefficients': coefficients_matrix  # key added to invert coeff
+        'coefficients_in_orthogonal_basis': coefficients
     }
 
 
-
-def create_partial_swap_gate(theta: float) -> np.ndarray:
-    """
-    Create a partial SWAP gate (PSWAP) with parameter theta.
-    Acts as identity on |00> and |11>, and as a rotation in the |01>, |10> subspace.
-
-    Args:
-        theta: Swap angle (radians)
-
-    Returns:
-        4x4 PSWAP(theta) gate matrix
-    """
-    pswap = np.array([
-        [1, 0,           0,          0],
-        [0, np.cos(theta), 1j*np.sin(theta), 0],
-        [0, 1j*np.sin(theta), np.cos(theta), 0],
-        [0, 0,           0,          1]
-    ], dtype=complex)
-    return pswap
-
-
-def create_two_qubit_gate_on_full_system(gate_2q: np.ndarray, qubit_pair: tuple, n_qubits: int) -> np.ndarray:
-    """
-    Embed a 2-qubit gate into the full n-qubit system.
-
-    Args:
-        gate_2q: 4x4 two-qubit gate
-        qubit_pair: Tuple (i, j) of qubits to apply gate to
-        n_qubits: Total number of qubits
-
-    Returns:
-        2^n_qubits x 2^n_qubits unitary for full system
-    """
-    i, j = qubit_pair
-    if i >= j or i < 0 or j >= n_qubits:
-        raise ValueError(f"Invalid qubit pair {qubit_pair} for {n_qubits} qubits")
-
-    # Identity matrices
-    I = np.eye(2, dtype=complex)
-
-    # Build the full system unitary
-    full_gate = np.array([[1]], dtype=complex)
-
-    for qubit in range(n_qubits):
-        if qubit == i:
-            # Start building the 2-qubit gate
-            if j == i + 1:
-                # Adjacent qubits - directly tensor the 2-qubit gate
-                full_gate = np.kron(full_gate, gate_2q)
-                qubit += 1  # Skip next qubit since we handled the pair
-            else:
-                # Non-adjacent case - more complex (not needed for brickwork)
-                raise NotImplementedError("Non-adjacent qubits not implemented")
-        elif qubit == j and j == i + 1:
-            # Already handled in the i case for adjacent qubits
-            continue
-        else:
-            # Apply identity to this qubit
-            full_gate = np.kron(full_gate, I)
-
-    return full_gate
-
-
-def create_brickwork_unitaries(n_qubits: int,theta:float) -> List[np.ndarray]:
-    """
-    Create brickwork circuit unitaries for n qubits.
-
-    Brickwork pattern:
-    - Even layers: pairs (0,1), (2,3), (4,5), (6,7), ...
-    - Odd layers: pairs (1,2), (3,4), (5,6), (7,8), ...
-
-    Args:
-        n_qubits: Number of qubits (should be even for full coverage)
-
-    Returns:
-        List of two unitaries [U_even, U_odd] for brickwork pattern
-    """
-    if n_qubits % 2 != 0:
-        print(f"Warning: {n_qubits} is odd. Last qubit will not participate in all gates.")
-
-    pswap = create_partial_swap_gate(theta)
-
-    # Even layer: (0,1), (2,3), (4,5), (6,7)
-    U_even = np.eye(2 ** n_qubits, dtype=complex)
-    for i in range(0, n_qubits - 1, 2):
-        # Apply PSWAP to qubits (i, i+1)
-        gate_full = create_two_qubit_gate_on_full_system(pswap, (i, i + 1), n_qubits)
-        U_even = gate_full @ U_even
-
-    # Odd layer: (1,2), (3,4), (5,6), (7,8)
-    U_odd = np.eye(2 ** n_qubits, dtype=complex)
-    for i in range(1, n_qubits - 1, 2):
-        # Apply PSWAP to qubits (i, i+1)
-        gate_full = create_two_qubit_gate_on_full_system(pswap, (i, i + 1), n_qubits)
-        U_odd = gate_full @ U_odd
-
-    return [U_even, U_odd]
-
-
-import numpy as np
-from itertools import permutations
-def embed_two_qubit_gate(gate, i, j, n):
-    # Permute qubits so i,j -> 0,1
-    qubit_order = [i, j] + [q for q in range(n) if q != i and q != j]
-    inv_order = np.argsort(qubit_order)
-    dim = 2 ** n
-    # Permutation matrix
-    def permute_basis(order):
-        perm = np.zeros((dim, dim), dtype=complex)
-        for k in range(dim):
-            bits = [(k >> l) & 1 for l in range(n)]
-            permuted = [bits[order[m]] for m in range(n)]
-            idx = sum([b << l for l, b in enumerate(permuted)])
-            perm[idx, k] = 1
-        return perm
-    P = permute_basis(qubit_order)
-    P_inv = permute_basis(inv_order)
-    # Gate acts on first two qubits
-    op = np.kron(gate, np.eye(2 ** (n - 2), dtype=complex))
-    return P_inv @ op @ P
-
-def create_general_circuit_unitaries(n_qubits, circuit_structure, theta):
-    pswap = create_partial_swap_gate(theta)
-    unitaries = []
-    for pairs in circuit_structure:
-        U = np.eye(2 ** n_qubits, dtype=complex)
-        for pair in pairs:
-            gate_full = embed_two_qubit_gate(pswap, pair[0], pair[1], n_qubits)
-            U = gate_full @ U
-        unitaries.append(U)
-    return unitaries
-
-def generate_nonmarkovian_circuit_unitaries(n_qubits, pattern_string, theta):
-    # Define two patterns for nearest-neighbor pairs
-    pattern_dict = {
-        'j': [(i, i+1) for i in range(0, n_qubits-1, 2)],  # even pairs: (0,1), (2,3), ...
-        'g': [(i, i+1) for i in range(1, n_qubits-1, 2)]   # odd pairs: (1,2), (3,4), ...
-    }
-    pswap = create_partial_swap_gate(theta)
-    unitaries = []
-    for letter in pattern_string:
-        pairs = pattern_dict[letter]
-        U = np.eye(2 ** n_qubits, dtype=complex)
-        for i, j in pairs:
-            gate_full = embed_two_qubit_gate(pswap, i, j, n_qubits)
-            U = gate_full @ U
-        unitaries.append(U)
-    return unitaries
-
-
-import random
-
-def generate_markov_chain_non_markovian_string(length, transition_matrix=None):
-    """
-    Generate a non-Markovian string using a Markov chain with memory.
-
-    Args:
-        length (int): Length of the string to generate.
-        transition_matrix (dict): Transition probabilities based on last two characters.
-
-    Returns:
-        str: Generated non-Markovian string.
-    """
-    if transition_matrix is None:
-        transition_matrix = {
-            ('j', 'j'): {'j': 0.05, 'g': 0.95},
-            ('j', 'g'): {'j': 0.1, 'g': 0.9},
-            ('g', 'j'): {'j': 0.02, 'g': 0.98},
-            ('g', 'g'): {'j': 0.02, 'g': 0.98},
-        }
-
-    result = ['j', 'g']  # Start with initial characters
-    for _ in range(length - 2):
-        last_two = tuple(result[-2:])
-        probabilities = transition_matrix.get(last_two, {'j': 0.5, 'g': 0.5})
-        next_char = random.choices(list(probabilities.keys()), weights=list(probabilities.values()))[0]
-        result.append(next_char)
-
-    return ''.join(result)
-
-
-def run_8_qubit_brickwork_example(theta:float):
-    """
-    Run the 8-qubit brickwork circuit analysis with PSWAP gates.
-    """
-    print("=== 8-Qubit Brickwork Circuit with PSWAP Gates ===\n")
-
-    # System parameters
-    n_qubits = 8
-    initial_operator = "ZIIIIIII"  # X on first and last qubits
-    time_steps = 20
-
-    print(f"System size: {n_qubits} qubits")
-    print(f"Initial operator: {initial_operator}")
-    print(f"Time steps: {time_steps}")
-
-    # Create brickwork unitaries
-    print("\nCreating brickwork unitaries...")
-    unitaries = create_brickwork_unitaries(n_qubits,theta)
-    print(f"Created {len(unitaries)} unitaries:")
-    print(f"- U_even: applies PSWAP to pairs (0,1), (2,3), (4,5), (6,7)")
-    print(f"- U_odd: applies PSWAP to pairs (1,2), (3,4), (5,6)")
-
-    # Check unitary dimensions
-    print(f"\nUnitary dimensions: {unitaries[0].shape}")
-    print(f"Hilbert space dimension: 2^{n_qubits} = {2 ** n_qubits}")
-
-    # Analyze without symmetry (will be large!)
-    print(f"\n=== Analysis without symmetry ===")
-    print(f"Full Pauli basis size: 4^{n_qubits} = {4 ** n_qubits:,}")
-    print("This is computationally intensive for 8 qubits!")
-
-    # Analyze with Z2 symmetry
-    print(f"\n=== Analysis with Z2 symmetry ===")
-    print("Using Z2 symmetry (even number of X+Y operators)")
-
-    # Check basis size with Z2 symmetry (using direct generation)
-    analyzer_z2 = QuantumOperatorAnalyzer(n_qubits, symmetry='Z2')
-    print(f"Z2 basis size: {len(analyzer_z2.pauli_basis):,}")
-    print(f"Reduction factor: {4 ** n_qubits / len(analyzer_z2.pauli_basis):.1f}x")
-
-    # Run the Z2 analysis
-    print(f"\nRunning Z2 symmetric analysis...")
-    results_z2 = analyze_with_z2_symmetry(n_qubits, initial_operator, unitaries, time_steps)
-
-    print(f"✓ Z2 Analysis completed!")
-    print(f"Evolved {len(results_z2['evolved_operators'])} operators")
-    print(f"Tracked {len(results_z2['overlaps_per_time'])} time steps")
-    print(f"Final weight distribution shape: {results_z2['weights_per_time'][-1].shape}")
-
-    # Analyze with U1 symmetry
-    print(f"\n=== Analysis with U1 symmetry ===")
-    print("Using U1 symmetry (equal number of X and Y operators)")
-
-    analyzer_u1 = QuantumOperatorAnalyzer(n_qubits, symmetry='U1')
-    print(f"U1 basis size: {len(analyzer_u1.pauli_basis):,}")
-    print(f"Reduction factor: {4 ** n_qubits / len(analyzer_u1.pauli_basis):.1f}x")
-
-    # Check if initial operator respects U1 symmetry
-    x_count = initial_operator.count('X')
-    y_count = initial_operator.count('Y')
-    if x_count == y_count:
-        print(f"Initial operator has equal X ({x_count}) and Y ({y_count}) → U1 analysis valid")
-
-        results_u1 = analyze_with_u1_symmetry(n_qubits, initial_operator, unitaries, time_steps)
-        print(f"U1 analysis completed")
-        print(f"U1 basis size used: {results_u1['basis_size']:,}")
-    else:
-        print(f"Initial operator has X={x_count}, Y={y_count} → Not U1 symmetric")
-        print("Skipping U1 analysis for this initial operator")
-
-    return unitaries, results_z2
-
-
-def demonstrate_pswap_properties(theta:float):
-    """
-    Demonstrate properties of the PSWAP gate.
-    """
-    print("\n=== PSWAP Gate Properties ===")
-
-    pswap = create_partial_swap_gate(theta)
-    print("PSWAP gate matrix:")
-    print(pswap)
-
-    # Check unitarity
-    should_be_identity = pswap @ pswap.conj().T
-    is_unitary = np.allclose(should_be_identity, np.eye(4))
-    print(f"\nIs unitary: {is_unitary}")
-
-    # Check if it's actually different from SWAP
-    swap = np.array([[1, 0, 0, 0], [0, 0, 1, 0], [0, 1, 0, 0], [0, 0, 0, 1]], dtype=complex)
-    is_same_as_swap = np.allclose(pswap, swap)
-    print(f"Same as regular SWAP: {is_same_as_swap}")
-
-    # Show the phase difference
-    phase_factor = pswap[1, 2] / swap[1, 2]  # Should be e^(iφ)
-    print(f"Phase factor: {phase_factor}")
-    print(f"Phase angle: {np.angle(phase_factor):.3f} radians = {np.angle(phase_factor) * 180 / np.pi:.1f}°")
-
-
-def demonstrate_efficiency_improvements():
-    """
-    Show the efficiency improvements from direct basis generation.
-    """
-    print("\n=== Efficiency Improvements ===")
-
-    import time
-
-    n_qubits = 8
-
-    print(f"Comparing basis generation for {n_qubits} qubits:")
-
-    # Z2 symmetry timing
-    start_time = time.time()
-    analyzer_z2 = QuantumOperatorAnalyzer(n_qubits, symmetry='Z2')
-    z2_time = time.time() - start_time
-    print(f"Z2 basis generation: {len(analyzer_z2.pauli_basis):,} strings in {z2_time:.4f}s")
-
-    # U1 symmetry timing
-    start_time = time.time()
-    analyzer_u1 = QuantumOperatorAnalyzer(n_qubits, symmetry='U1')
-    u1_time = time.time() - start_time
-    print(f"U1 basis generation: {len(analyzer_u1.pauli_basis):,} strings in {u1_time:.4f}s")
-
-    # Show some example strings
-    print(f"\nFirst 5 Z2 strings: {analyzer_z2.pauli_basis[:5]}")
-    print(f"First 5 U1 strings: {analyzer_u1.pauli_basis[:5]}")
-
-def plot_final_weight_histogram(results, bins=50):
-    """
-    Plot a histogram of nonzero weights at the last time step.
-
-    Args:
-        results: Output from analyze_with_z2_symmetry() or similar
-        bins: Number of histogram bins
-    """
-    final_weights = np.array(results['weights_per_time'][-1])
-    nonzero_weights = final_weights[final_weights > 0]
-
-    plt.figure(figsize=(7, 4))
-    plt.hist(nonzero_weights, bins=bins, log=True, color='navy', alpha=0.7)
-    plt.xlabel('Weight')
-    plt.ylabel('Count (log scale)')
-    plt.title('Distribution of Nonzero Weights at Final Time Step')
-    plt.tight_layout()
-    plt.show()
-
-def plot_nonzero_operator_count(results):
-    """
-    Plot the number of nonzero-weight operators as a function of time.
-
-    Args:
-        results: Output from analyze_with_z2_symmetry() or similar
-    """
-    weights_per_time = results['weights_per_time']
-    n_time_steps = len(weights_per_time)
-
-    nonzero_counts = [np.sum(np.array(w) > 0) for w in weights_per_time]
-
-    plt.figure(figsize=(7, 4))
-    plt.plot(range(n_time_steps), nonzero_counts, marker='o', color='purple')
-    plt.xlabel('Time Step')
-    plt.ylabel('Number of Nonzero Operators')
-    plt.title('Number of Explored Operators Over Time')
-    plt.grid(True, alpha=0.3)
-    plt.tight_layout()
-    plt.show()
-
-def quick_plot(results):
-    """
-    Super simple single plot - just the weight of top operators over time.
-    """
+# Plotting functions
+def plot_operator_evolution(results: Dict, top_n: int = 15, figsize: Tuple = (12, 8)):
+    """Plot evolution of top operators."""
     weights_per_time = results['weights_per_time']
     pauli_basis = results['pauli_basis']
     n_time_steps = len(weights_per_time)
 
-    plt.figure(figsize=(10, 6))
-
-    # Find top 10 operators by maximum weight
+    # Find top operators by maximum weight
     all_max_weights = []
     for i, pauli_string in enumerate(pauli_basis):
         max_weight = max(weights_per_time[t][i] for t in range(n_time_steps))
@@ -1045,168 +498,587 @@ def quick_plot(results):
 
     all_max_weights.sort(reverse=True)
 
-    # Plot top 10
-    for rank, (_, idx, pauli_string) in enumerate(all_max_weights[:100]):
+    plt.figure(figsize=figsize)
+
+    for rank, (_, idx, pauli_string) in enumerate(all_max_weights[:top_n]):
         weights_over_time = [weights_per_time[t][idx] for t in range(n_time_steps)]
-        plt.plot(range(n_time_steps), weights_over_time, 'o-', linewidth=2,
-                 label=f'{pauli_string}', markersize=4)
+        color = PASTEL_COLORS[rank % len(PASTEL_COLORS)]
+
+        plt.plot(range(n_time_steps), weights_over_time, 'o-',
+                 linewidth=2, color=color, label=pauli_string,
+                 markersize=4, alpha=0.8)
 
     plt.xlabel('Time Step')
     plt.ylabel('Weight')
-    plt.title('Top 10 Operators: Weight Evolution')
-    #plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
-    plt.grid(True, alpha=0.3)
+    plt.title(f'Top {top_n} Operators: Weight Evolution')
     plt.yscale('log')
+    plt.grid(True, alpha=0.3)
+    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
     plt.tight_layout()
     plt.show()
 
-def plot_pauli_coefficients_heatmap(coefficients_matrix, pauli_basis, time_steps):
-    """
-    Visualize the coefficients of Pauli strings as a heatmap.
 
-    Args:
-        coefficients_matrix: 2D array of coefficients (time_steps x n_pauli_strings)
-        pauli_basis: List of Pauli strings
-        time_steps: Number of time steps
-    """
-    # Compute the magnitude of coefficients
-    coefficients_magnitude = np.abs(coefficients_matrix)
-
-    plt.figure(figsize=(12, 8))
-    plt.imshow(coefficients_magnitude.T, aspect='auto', cmap='viridis', origin='lower')
-    plt.colorbar(label='|Coefficient|')
-    plt.xlabel('Time Step')
-    plt.ylabel('Pauli String Index')
-    plt.title('Heatmap of Pauli String Coefficients Over Time')
-    plt.xticks(range(0, time_steps, max(1, time_steps // 10)))
-    plt.yticks(range(len(pauli_basis)), pauli_basis, fontsize=8)
-    plt.tight_layout()
-    plt.show()
-
-def plot_gs_basis_evolution(results, gs_results, figsize=(12, 8)):
-    """
-    Plot n*|a_n(t)|^2 vs time (top left), leave top right empty,
-    and keep the bottom two plots as before.
-    """
+def plot_gs_basis_evolution(results: Dict, gs_results: Dict, figsize: Tuple = (12, 8)):
+    """Plot Gram-Schmidt basis evolution."""
     coefficients_per_time = gs_results['coefficients_in_orthogonal_basis']
     n_time_steps = len(coefficients_per_time)
     n_gs_operators = len(coefficients_per_time[0]) if coefficients_per_time else 0
 
-    # |a_n(t)|^2
-    weights_gs_basis = np.abs(np.array(coefficients_per_time)) ** 2  # shape: (n_time, n_gs_ops)
+    weights_gs_basis = np.abs(np.array(coefficients_per_time)) ** 2
     time_steps = range(n_time_steps)
 
     fig, axes = plt.subplots(2, 2, figsize=figsize)
-    fig.suptitle('Operator Evolution in Gram-Schmidt Basis', fontsize=16)
+    fig.suptitle('Gram-Schmidt Basis Evolution', fontsize=16)
 
-    # Top left: sum_n n*|a_n(t)|^2
-    ax1 = axes[0, 0]
+    # Top left: Weighted GS index
     n_indices = np.arange(n_gs_operators)
     weighted_sum = np.sum(n_indices * weights_gs_basis, axis=1)
-    ax1.plot(time_steps, weighted_sum, 'o-', linewidth=2, color='darkorange')
-    ax1.set_xlabel('Time Step t')
-    ax1.set_ylabel(r'$\sum_n n\,|a_n(t)|^2$')
-    ax1.set_title(r'Weighted GS Index: $\sum_n n\,|a_n(t)|^2$')
-    ax1.grid(True, alpha=0.3)
+    axes[0, 0].plot(time_steps, weighted_sum, 'o-', linewidth=2, color='darkorange')
+    axes[0, 0].set_xlabel('Time Step')
+    axes[0, 0].set_ylabel(r'$\sum_n n|a_n(t)|^2$')
+    axes[0, 0].set_title('Weighted GS Index')
+    axes[0, 0].grid(True, alpha=0.3)
 
-    # Top right: empty
-    axes[0, 1].axis('off')
-
-    # Bottom left: heatmap
-    ax3 = axes[1, 0]
-    im = ax3.imshow(weights_gs_basis.T, aspect='auto', cmap='hot', origin='lower')
-    ax3.set_xlabel('Time Step t')
-    ax3.set_ylabel('GS Operator Index n')
-    ax3.set_title('Full GS Evolution Heatmap\n|a_n(t)|² for all n,t')
-    plt.colorbar(im, ax=ax3, label='|a_n(t)|²')
-
-    # Bottom right: weight conservation
-    ax4 = axes[1, 1]
+    # Top right: Norm conservation
     total_weights = np.sum(weights_gs_basis, axis=1)
-    ax4.plot(time_steps, total_weights, 'b-o', linewidth=3, markersize=5, label='Σ_n |a_n(t)|²')
+    deviation_from_one = total_weights - 1.0
+    axes[0, 1].plot(time_steps, deviation_from_one * 1e12, 'o-', linewidth=2, color='green')
+    axes[0, 1].set_xlabel('Time Step')
+    axes[0, 1].set_ylabel('Deviation × 10¹²')
+    axes[0, 1].set_title('Norm Conservation')
+    axes[0, 1].grid(True, alpha=0.3)
+
+    # Bottom left: Heatmap
+    im = axes[1, 0].imshow(weights_gs_basis.T, aspect='auto', cmap='hot', origin='lower')
+    axes[1, 0].set_xlabel('Time Step')
+    axes[1, 0].set_ylabel('GS Operator Index')
+    axes[1, 0].set_title('GS Evolution Heatmap')
+    plt.colorbar(im, ax=axes[1, 0], label='|a_n(t)|²')
+
+    # Bottom right: Weight conservation
+    axes[1, 1].plot(time_steps, total_weights, 'b-o', linewidth=2, label='Total')
     for k in [1, 2, 3, 5]:
         if k <= n_gs_operators:
             cum_weight = np.sum(weights_gs_basis[:, :k], axis=1)
-            ax4.plot(time_steps, cum_weight, '--', linewidth=2, label=f'Σ(n=0 to {k - 1}) |a_n|²')
-    ax4.set_xlabel('Time Step t')
-    ax4.set_ylabel('Cumulative Weight')
-    ax4.set_title('Weight Distribution in GS Basis\n(Conservation & concentration)')
-    ax4.legend()
-    ax4.grid(True, alpha=0.3)
+            axes[1, 1].plot(time_steps, cum_weight, '--', linewidth=2,
+                            label=f'First {k} operators')
+    axes[1, 1].set_xlabel('Time Step')
+    axes[1, 1].set_ylabel('Cumulative Weight')
+    axes[1, 1].set_title('Weight Distribution')
+    axes[1, 1].legend()
+    axes[1, 1].grid(True, alpha=0.3)
 
     plt.tight_layout()
     plt.show()
 
-# Main execution
+
+# Additional utility functions and improvements
+
+def validate_initial_operator(initial_pauli_string: str, symmetry: Optional[str] = None) -> bool:
+    """Validate that initial operator respects the specified symmetry."""
+    if symmetry is None:
+        return True
+
+    x_count = initial_pauli_string.count('X')
+    y_count = initial_pauli_string.count('Y')
+
+    if symmetry == 'Z2':
+        xy_count = x_count + y_count
+        valid = xy_count % 2 == 0
+        if not valid:
+            print(
+                f"Warning: Initial operator '{initial_pauli_string}' has odd X+Y count ({xy_count}), violates Z2 symmetry")
+        return valid
+
+    elif symmetry == 'U1':
+        valid = x_count == y_count
+        if not valid:
+            print(
+                f"Warning: Initial operator '{initial_pauli_string}' has X={x_count}, Y={y_count}, violates U1 symmetry")
+        return valid
+
+    return True
+
+
+def compute_complexity_metrics(results: Dict) -> Dict:
+    """Compute various complexity metrics from the spreading results."""
+    weights_per_time = results['weights_per_time']
+    n_time_steps = len(weights_per_time)
+
+    metrics = {
+        'nonzero_counts': [],
+        'shannon_entropy': [],
+        'participation_ratio': [],
+        'weight_concentration_top10': []
+    }
+
+    for weights in weights_per_time:
+        w = np.array(weights)
+        active_mask = w > WEIGHT_THRESHOLD
+        w_active = w[active_mask]
+
+        # Number of active operators
+        metrics['nonzero_counts'].append(np.sum(active_mask))
+
+        if len(w_active) > 0:
+            # Normalize for entropy calculation
+            w_norm = w_active / np.sum(w_active)
+
+            # Shannon entropy
+            entropy = -np.sum(w_norm * np.log(w_norm + 1e-16))
+            metrics['shannon_entropy'].append(entropy)
+
+            # Participation ratio (inverse participation ratio)
+            participation = 1 / np.sum(w_norm ** 2)
+            metrics['participation_ratio'].append(participation)
+
+            # Weight concentration in top 10%
+            n_top = max(1, len(w) // 10)
+            top_weights = np.sort(w)[-n_top:]
+            concentration = np.sum(top_weights) / np.sum(w)
+            metrics['weight_concentration_top10'].append(concentration)
+        else:
+            metrics['shannon_entropy'].append(0)
+            metrics['participation_ratio'].append(0)
+            metrics['weight_concentration_top10'].append(0)
+
+    return metrics
+
+
+def analyze_convergence(weights_per_time: List[np.ndarray], window_size: int = 5) -> Dict:
+    """Analyze convergence properties of the weight evolution."""
+    if len(weights_per_time) < window_size + 1:
+        return {'converged': False, 'message': 'Insufficient time steps for convergence analysis'}
+
+    # Calculate relative change in weight distribution
+    relative_changes = []
+    for t in range(window_size, len(weights_per_time)):
+        w_curr = np.array(weights_per_time[t])
+        w_prev = np.array(weights_per_time[t - 1])
+
+        # Avoid division by zero
+        denominator = np.maximum(w_prev, WEIGHT_THRESHOLD)
+        rel_change = np.mean(np.abs(w_curr - w_prev) / denominator)
+        relative_changes.append(rel_change)
+
+    # Check if converged (small changes in recent window)
+    if len(relative_changes) >= window_size:
+        recent_changes = relative_changes[-window_size:]
+        avg_change = np.mean(recent_changes)
+        converged = avg_change < 1e-6
+
+        return {
+            'converged': converged,
+            'average_recent_change': avg_change,
+            'relative_changes': relative_changes,
+            'convergence_threshold': 1e-6
+        }
+
+    return {'converged': False, 'message': 'Insufficient data for convergence analysis'}
+
+
+def plot_complexity_metrics(results: Dict, figsize: Tuple = (14, 10)):
+    """Plot comprehensive complexity metrics."""
+    metrics = compute_complexity_metrics(results)
+    n_time_steps = len(metrics['nonzero_counts'])
+    time_steps = range(n_time_steps)
+
+    fig, axes = plt.subplots(2, 2, figsize=figsize)
+    fig.suptitle('Operator Spreading Complexity Metrics', fontsize=16, fontweight='bold')
+
+    # Top left: Active operators
+    axes[0, 0].plot(time_steps, metrics['nonzero_counts'], 'o-',
+                    color='#FFB3BA', linewidth=2, markersize=5)
+    axes[0, 0].set_ylabel('Active Operators')
+    axes[0, 0].set_title('Operator Space Exploration')
+    axes[0, 0].grid(True, alpha=0.3)
+
+    # Top right: Shannon entropy
+    axes[0, 1].plot(time_steps, metrics['shannon_entropy'], 's-',
+                    color='#BAFFC9', linewidth=2, markersize=5)
+    axes[0, 1].set_ylabel('Shannon Entropy')
+    axes[0, 1].set_title('Weight Distribution Entropy')
+    axes[0, 1].grid(True, alpha=0.3)
+
+    # Bottom left: Participation ratio
+    axes[1, 0].plot(time_steps, metrics['participation_ratio'], '^-',
+                    color='#BAE1FF', linewidth=2, markersize=5)
+    axes[1, 0].set_xlabel('Time Step')
+    axes[1, 0].set_ylabel('Participation Ratio')
+    axes[1, 0].set_title('Effective Dimensionality')
+    axes[1, 0].grid(True, alpha=0.3)
+
+    # Bottom right: Weight concentration
+    axes[1, 1].plot(time_steps, metrics['weight_concentration_top10'], 'D-',
+                    color='#E1BAFF', linewidth=2, markersize=5)
+    axes[1, 1].set_xlabel('Time Step')
+    axes[1, 1].set_ylabel('Weight in Top 10%')
+    axes[1, 1].set_title('Weight Concentration')
+    axes[1, 1].grid(True, alpha=0.3)
+
+    plt.tight_layout()
+    plt.show()
+
+    return metrics
+
+
+def save_results(results: Dict, filename: str):
+    """Save results to a compressed numpy file."""
+    import pickle
+    try:
+        with open(f"{filename}.pkl", 'wb') as f:
+            pickle.dump(results, f)
+        print(f"Results saved to {filename}.pkl")
+    except Exception as e:
+        print(f"Failed to save results: {e}")
+
+
+def load_results(filename: str) -> Dict:
+    """Load results from a compressed numpy file."""
+    import pickle
+    try:
+        with open(f"{filename}.pkl", 'rb') as f:
+            results = pickle.load(f)
+        print(f"Results loaded from {filename}.pkl")
+        return results
+    except Exception as e:
+        print(f"Failed to load results: {e}")
+        return {}
+
+
+"""
+Functions to plot Pauli operator statistics and weight histograms
+"""
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+
+def plot_pauli_operator_counts(results, figsize=(12, 5)):
+    """
+    Plot total and active Pauli operator counts over time.
+
+    Args:
+        results: Output from analyze_operator_spreading()
+        figsize: Figure size tuple
+    """
+    weights_per_time = results['weights_per_time']
+    total_operators = len(weights_per_time[0])
+    time_steps = range(len(weights_per_time))
+
+    # Count active operators at each time step
+    active_counts = []
+    for weights in weights_per_time:
+        active = np.sum(np.array(weights) > 1e-30)  # Non-zero threshold
+        active_counts.append(active)
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=figsize)
+
+    # Left plot: Active vs Total
+    ax1.plot(time_steps, active_counts, 'o-', linewidth=2,
+             color='#FF6B6B', markersize=6, label='Active operators')
+    ax1.axhline(y=total_operators, color='#4ECDC4', linestyle='--',
+                linewidth=2, label=f'Total operators ({total_operators})')
+
+    ax1.set_xlabel('Time Step')
+    ax1.set_ylabel('Number of Operators')
+    ax1.set_title('Pauli Operator Space Exploration')
+    ax1.legend()
+    ax1.grid(True, alpha=0.3)
+
+    # Right plot: Percentage active
+    percentage_active = [100 * count / total_operators for count in active_counts]
+    ax2.plot(time_steps, percentage_active, 's-', linewidth=2,
+             color='#45B7D1', markersize=6)
+
+    ax2.set_xlabel('Time Step')
+    ax2.set_ylabel('Percentage Active (%)')
+    ax2.set_title('Fraction of Pauli Space Explored')
+    ax2.grid(True, alpha=0.3)
+
+    # Add text annotations
+    final_active = active_counts[-1]
+    final_percentage = percentage_active[-1]
+
+    ax1.text(0.02, 0.98, f'Final: {final_active}/{total_operators}',
+             transform=ax1.transAxes, fontsize=10, verticalalignment='top',
+             bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
+
+    ax2.text(0.02, 0.98, f'Final: {final_percentage:.1f}%',
+             transform=ax2.transAxes, fontsize=10, verticalalignment='top',
+             bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
+
+    plt.tight_layout()
+    plt.show()
+
+    # Print summary
+    print(f"Pauli Operator Summary:")
+    print(f"  Total operators in basis: {total_operators}")
+    print(f"  Initial active: {active_counts[0]}")
+    print(f"  Final active: {final_active}")
+    print(f"  Exploration: {final_percentage:.1f}% of Pauli space")
+
+    return active_counts
+
+
+def plot_nonzero_weight_histogram(results, time_step=-1, bins=50, figsize=(10, 6)):
+    """
+    Plot histogram of non-zero Pauli operator weights.
+
+    Args:
+        results: Output from analyze_operator_spreading()
+        time_step: Which time step to plot (-1 for final)
+        bins: Number of histogram bins
+        figsize: Figure size tuple
+    """
+    weights = np.array(results['weights_per_time'][time_step])
+    pauli_basis = results['pauli_basis']
+
+    # Get non-zero weights
+    nonzero_mask = weights > 1e-30
+    nonzero_weights = weights[nonzero_mask]
+    nonzero_labels = [pauli_basis[i] for i in range(len(pauli_basis)) if nonzero_mask[i]]
+
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=figsize)
+
+    # Top: Histogram of weights
+    n, bin_edges, patches = ax1.hist(nonzero_weights, bins=bins,
+                                     color='#FFB6C1', alpha=0.7,
+                                     edgecolor='#FF69B4', linewidth=0.5)
+
+    # Color gradient for histogram bars
+    for i, p in enumerate(patches):
+        p.set_facecolor(plt.cm.viridis(i / len(patches)))
+
+    ax1.set_xlabel('Weight')
+    ax1.set_ylabel('Count')
+    ax1.set_title(
+        f'Distribution of Non-Zero Pauli Weights (t={time_step if time_step >= 0 else len(results["weights_per_time"]) - 1})')
+    ax1.set_yscale('log')
+    ax1.grid(True, alpha=0.3)
+
+    # Add statistics
+    mean_weight = np.mean(nonzero_weights)
+    max_weight = np.max(nonzero_weights)
+    min_weight = np.min(nonzero_weights)
+
+    stats_text = f'Non-zero operators: {len(nonzero_weights)}\n'
+    stats_text += f'Mean: {mean_weight:.2e}\n'
+    stats_text += f'Max: {max_weight:.2e}\n'
+    stats_text += f'Min: {min_weight:.2e}'
+
+    ax1.text(0.98, 0.98, stats_text, transform=ax1.transAxes,
+             fontsize=9, verticalalignment='top', horizontalalignment='right',
+             bbox=dict(boxstyle='round', facecolor='white', alpha=0.9))
+
+    # Bottom: Log-scale histogram
+    ax2.hist(nonzero_weights, bins=bins, color='#87CEEB', alpha=0.7,
+             edgecolor='#4682B4', linewidth=0.5)
+    ax2.set_xlabel('Weight')
+    ax2.set_ylabel('Count')
+    ax2.set_title('Same Distribution (Log-Log Scale)')
+    ax2.set_xscale('log')
+    ax2.set_yscale('log')
+    ax2.grid(True, alpha=0.3)
+
+    plt.tight_layout()
+    plt.show()
+
+    # Print top operators
+    print(f"\nTop 10 Pauli operators by weight:")
+    sorted_indices = np.argsort(nonzero_weights)[::-1]
+    for i in range(min(10, len(sorted_indices))):
+        idx = sorted_indices[i]
+        weight = nonzero_weights[idx]
+        pauli_op = nonzero_labels[idx]
+        print(f"  {i + 1:2d}. {pauli_op}: {weight:.3e}")
+
+    return nonzero_weights, nonzero_labels
+
+
+def plot_weight_evolution_heatmap(results, max_operators=50, figsize=(12, 8)):
+    """
+    Plot heatmap showing weight evolution of top Pauli operators.
+
+    Args:
+        results: Output from analyze_operator_spreading()
+        max_operators: Maximum number of operators to show
+        figsize: Figure size tuple
+    """
+    weights_per_time = results['weights_per_time']
+    pauli_basis = results['pauli_basis']
+    n_time_steps = len(weights_per_time)
+
+    # Convert to numpy array for easier manipulation
+    weight_matrix = np.array(weights_per_time).T  # Shape: (n_operators, n_time)
+
+    # Find operators with highest maximum weight
+    max_weights = np.max(weight_matrix, axis=1)
+    top_indices = np.argsort(max_weights)[::-1][:max_operators]
+
+    # Select top operators
+    top_weights = weight_matrix[top_indices, :]
+    top_labels = [pauli_basis[i] for i in top_indices]
+
+    # Create heatmap
+    fig, ax = plt.subplots(figsize=figsize)
+
+    im = ax.imshow(top_weights, aspect='auto', cmap='hot',
+                   origin='lower', interpolation='nearest')
+
+    # Colorbar
+    cbar = plt.colorbar(im, ax=ax, shrink=0.8)
+    cbar.set_label('Weight', fontsize=12)
+
+    # Labels and title
+    ax.set_xlabel('Time Step', fontsize=12)
+    ax.set_ylabel('Pauli Operator', fontsize=12)
+    ax.set_title(f'Weight Evolution of Top {len(top_labels)} Pauli Operators',
+                 fontsize=14, pad=20)
+
+    # Set ticks
+    ax.set_xticks(range(0, n_time_steps, max(1, n_time_steps // 10)))
+    ax.set_yticks(range(len(top_labels)))
+    ax.set_yticklabels(top_labels, fontsize=8)
+
+    plt.tight_layout()
+    plt.show()
+
+    return top_weights, top_labels
+
+
+def plot_comprehensive_pauli_analysis(results, figsize=(16, 12)):
+    """
+    Comprehensive plotting function that shows all Pauli operator statistics.
+
+    Args:
+        results: Output from analyze_operator_spreading()
+        figsize: Figure size tuple
+    """
+    fig = plt.figure(figsize=figsize)
+
+    # Create a 2x3 subplot grid
+    gs = fig.add_gridspec(3, 2, height_ratios=[1, 1, 1.2], hspace=0.3, wspace=0.3)
+
+    weights_per_time = results['weights_per_time']
+    pauli_basis = results['pauli_basis']
+    total_operators = len(pauli_basis)
+    time_steps = range(len(weights_per_time))
+
+    # 1. Active operator count over time
+    ax1 = fig.add_subplot(gs[0, 0])
+    active_counts = [np.sum(np.array(w) > 1e-30) for w in weights_per_time]
+    ax1.plot(time_steps, active_counts, 'o-', linewidth=2, color='#FF6B6B', markersize=4)
+    ax1.set_ylabel('Active Operators')
+    ax1.set_title('Active Pauli Operators vs Time')
+    ax1.grid(True, alpha=0.3)
+
+    # 2. Percentage of space explored
+    ax2 = fig.add_subplot(gs[0, 1])
+    percentage = [100 * count / total_operators for count in active_counts]
+    ax2.plot(time_steps, percentage, 's-', linewidth=2, color='#45B7D1', markersize=4)
+    ax2.set_ylabel('% of Pauli Space')
+    ax2.set_title('Pauli Space Exploration')
+    ax2.grid(True, alpha=0.3)
+
+    # 3. Weight histogram (final time)
+    ax3 = fig.add_subplot(gs[1, 0])
+    final_weights = np.array(weights_per_time[-1])
+    nonzero_weights = final_weights[final_weights > 1e-30]
+    ax3.hist(nonzero_weights, bins=30, color='#98D8C8', alpha=0.7, edgecolor='#2F7D32')
+    ax3.set_xlabel('Weight')
+    ax3.set_ylabel('Count')
+    ax3.set_title('Final Weight Distribution')
+    ax3.set_yscale('log')
+    ax3.grid(True, alpha=0.3)
+
+    # 4. Log-log weight histogram
+    ax4 = fig.add_subplot(gs[1, 1])
+    ax4.hist(nonzero_weights, bins=30, color='#FFB74D', alpha=0.7, edgecolor='#F57C00')
+    ax4.set_xlabel('Weight')
+    ax4.set_ylabel('Count')
+    ax4.set_title('Final Weight Distribution (Log-Log)')
+    ax4.set_xscale('log')
+    ax4.set_yscale('log')
+    ax4.grid(True, alpha=0.3)
+
+    # 5. Heatmap of top operators (spans bottom row)
+    ax5 = fig.add_subplot(gs[2, :])
+
+    # Get top 20 operators for heatmap
+    weight_matrix = np.array(weights_per_time).T
+    max_weights = np.max(weight_matrix, axis=1)
+    top_indices = np.argsort(max_weights)[::-1][:20]
+    top_weights = weight_matrix[top_indices, :]
+    top_labels = [pauli_basis[i] for i in top_indices]
+
+    im = ax5.imshow(top_weights, aspect='auto', cmap='plasma', origin='lower')
+    ax5.set_xlabel('Time Step')
+    ax5.set_ylabel('Top Pauli Operators')
+    ax5.set_title('Weight Evolution Heatmap (Top 20 Operators)')
+    ax5.set_yticks(range(len(top_labels)))
+    ax5.set_yticklabels(top_labels, fontsize=8)
+
+    # Colorbar for heatmap
+    cbar = plt.colorbar(im, ax=ax5, shrink=0.6)
+    cbar.set_label('Weight')
+
+    # Add summary statistics
+    final_active = active_counts[-1]
+    final_percentage = percentage[-1]
+    max_weight = np.max(final_weights)
+
+    summary_text = f'Summary:\n'
+    summary_text += f'Total operators: {total_operators}\n'
+    summary_text += f'Final active: {final_active}\n'
+    summary_text += f'Space explored: {final_percentage:.1f}%\n'
+    summary_text += f'Max weight: {max_weight:.2e}'
+
+    fig.text(0.02, 0.98, summary_text, fontsize=10, verticalalignment='top',
+             bbox=dict(boxstyle='round', facecolor='lightblue', alpha=0.8))
+
+    plt.show()
+
+    return {
+        'active_counts': active_counts,
+        'nonzero_weights': nonzero_weights,
+        'top_operators': list(zip(top_labels, np.max(top_weights, axis=1)))
+    }
+
+
 if __name__ == "__main__":
-    theta_try = np.pi/15
-    # Run the main analysis
-    #unitaries = create_brickwork_unitaries(8,theta_try)
-    # Step 1: Get your spreading results first
-    #results = analyze_with_u1_symmetry(8, "ZIIIIIII", unitaries, 2, verbose=True)
-    #analyzer = QuantumOperatorAnalyzer(8, symmetry='U1')
-    #gs_results = orthogonalize_evolved_operators(results['evolved_operators'], analyzer)
-    #plot_gs_basis_evolution(results, gs_results)
-    #plot_nonzero_operator_count(results)
-    #quick_plot(results)
-    #plot_final_weight_histogram(results)
-
-    # Example usage:
-    circuit_structure = [
-         [[0,1],[2,3],[4,5],[6,7]],  # time step 1
-         [[1,4],[3,2],[5,6]],        # time step 2
-         [[0,7]]                    # time step 3 (non-nearest neighbor)
-     ]
-    unitaries = create_general_circuit_unitaries(8, circuit_structure, theta=np.pi/15)
-    #results = analyze_with_u1_symmetry(8, "ZIIIIIII", unitaries, 2, verbose=True)
-    ##analyzer = QuantumOperatorAnalyzer(8, symmetry='U1')
-    #gs_results = orthogonalize_evolved_operators(results['evolved_operators'], analyzer)
-    #plot_gs_basis_evolution(results, gs_results)
-    #plot_nonzero_operator_count(results)
-    #quick_plot(results)
-    #plot_final_weight_histogram(results)
-    # Example usage:
+    # Parameters
     n_qubits = 8
-    pattern_string = "jgjgjggggggggggggggggggggggggggggggg"
-    theta = np.pi / 15
-    #unitaries = generate_nonmarkovian_circuit_unitaries(n_qubits, pattern_string, theta)
-    print(f"Generated {len(unitaries)} unitaries for pattern: {pattern_string}")
-    #results = analyze_with_u1_symmetry(8, "ZIIIIIII", unitaries, 20, verbose=True)
-    #analyzer = QuantumOperatorAnalyzer(8, symmetry='U1')
-    #gs_results = orthogonalize_evolved_operators(results['evolved_operators'], analyzer)
-    #plot_gs_basis_evolution(results, gs_results)
-    #plot_nonzero_operator_count(results)
-    #quick_plot(results)
-    #plot_final_weight_histogram(results)
+    rules= ["rule_0_0_2_2","rule_1_3_3_2","rule_3_3_1_1"]
+    for rule in rules:
+        with open(f'../non_markovian_orders_list/{rule}.csv', 'r') as f:
+            reader = csv.reader(f)
+            NM_list_0_0_2_2 = [row[0].strip() for row in reader if row and row[0].strip()]
 
+        len(NM_list_0_0_2_2[1])
+        pattern_string = NM_list_0_0_2_2[1][0:5]
+        theta = np.pi / 15
+        initial_operator = "ZIIIIIII"
 
-    n_qubits = 8
-    #pattern_string = "jjjgjjjg"
-    theta = np.pi /15
-    #unitaries = generate_nonmarkovian_circuit_unitaries(n_qubits, pattern_string, theta)
-    #print(f"Generated {len(unitaries)} unitaries for pattern: {pattern_string}")
-    for i in range(10):
-        pattern_string = generate_markov_chain_non_markovian_string(100)
-        print(f"Generated pattern string: {pattern_string}")
-    unitaries = generate_nonmarkovian_circuit_unitaries(n_qubits, pattern_string, theta)
-    #results = analyze_with_u1_symmetry(8, "ZIIIIIII", unitaries, 20, verbose=True)
-    #analyzer = QuantumOperatorAnalyzer(8, symmetry='U1')
-    #gs_results = orthogonalize_evolved_operators(results['evolved_operators'], analyzer)
-    #plot_gs_basis_evolution(results, gs_results)
-    #plot_nonzero_operator_count(results)
-    #quick_plot(results)
-    #plot_final_weight_histogram(results)
+        print(f"Pattern: {pattern_string}")
+        print(f"Length: {len(pattern_string)} steps")
 
-    n_qubits = 8
-    pattern_string = "jgjgjgjgjgjgjgjgjgjgjgjgjgjgjgjg"
-    theta = np.pi / 15
-    #unitaries = generate_nonmarkovian_circuit_unitaries(n_qubits, pattern_string, theta)
-    #print(f"Generated {len(unitaries)} unitaries for pattern: {pattern_string}")
-    ##results = analyze_with_u1_symmetry(8, "ZIIIIIII", unitaries, 20, verbose=True)
-    #analyzer = QuantumOperatorAnalyzer(8, symmetry='U1')
-    #gs_results = orthogonalize_evolved_operators(results['evolved_operators'], analyzer)
-    #plot_gs_basis_evolution(results, gs_results)
-    #plot_nonzero_operator_count(results)
-    #quick_plot(results)
-    #plot_final_weight_histogram(results)
+        # Create circuit from pattern
+        unitaries = generate_nonmarkovian_circuit_unitaries(n_qubits, pattern_string, theta)
+        print(f"Created {len(unitaries)} unitaries")
+
+        # Run analysis
+        results = analyze_operator_spreading(
+            n_qubits, initial_operator, unitaries, len(pattern_string),
+            symmetry='U1', verbose=True
+        )
+
+        # Gram-Schmidt
+        analyzer = QuantumOperatorAnalyzer(n_qubits, symmetry='U1')
+        gs_results = orthogonalize_evolved_operators(results['evolved_operators'], analyzer)
+
+        # Plot results
+        plot_operator_evolution(results)
+        plot_gs_basis_evolution(results, gs_results)
+        plot_comprehensive_pauli_analysis(results)
 
