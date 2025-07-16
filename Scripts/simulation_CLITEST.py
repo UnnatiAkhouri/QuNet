@@ -5,7 +5,7 @@ example usage:
 # Add directory above current directory to path
 import os.path
 import sys, argparse, h5py
-from src.clifford_gates import (create_random_u1_clifford_gate, create_random_clifford_gate)
+from src.clifford_gates import (grab_u1_clifford_gate, create_random_clifford_gate)
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -133,7 +133,7 @@ def execute(file_name: str, connectivity, order_rule_name: str, unitary_energy_s
                 sub_unitary = src.clifford_gates.create_random_clifford_gate()
 
             case "u1cliffordunitary":
-                sub_unitary = src.clifford_gates.create_random_u1_clifford_gate()
+                sub_unitary = src.clifford_gates.grab_u1_clifford_gate(unitary_rng)
 
             case "haar2Qunitary":
                 sub_unitary = random_unitary.haar_random_unitary(theta_divisor=1,phi_divisor=1,omega_divisor=1, seed=None)
