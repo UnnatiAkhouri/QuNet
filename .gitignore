@@ -5,3 +5,4 @@
 */NM_twoQdms_all.npy
 */NM_corrs_all.npy
 *.hdf5
+*.npy
