@@ -6,3 +6,4 @@
 */NM_corrs_all.npy
 *.hdf5
 *.npy
+*LONG.csv
