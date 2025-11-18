@@ -79,7 +79,7 @@ def create_clifford_gate(numclass,index):
         h_val, v1_rem = divmod(hv1_val,3)
         h1_val, h2_rem = divmod(h_val,2)
         h1_rem= h1_val % 2
-        return DM.DensityMatrix(DM.SPARSE_TYPE(np.kron(h[h1_rem],h[h2_rem]) @ np.kron(v[v1_rem],v[v2_rem]) @ np.kron(p[p1_rem],p[p2_rem]),dtype=np.complex64), energy_basis(2))
+        return np.kron(h[h1_rem],h[h2_rem]) @ np.kron(v[v1_rem],v[v2_rem]) @ np.kron(p[p1_rem],p[p2_rem])
 
     if numclass == 4:
         if index > 576 or index <1:
@@ -90,7 +90,7 @@ def create_clifford_gate(numclass,index):
         h_val, v1_rem = divmod(hv1_val, 3)
         h1_val, h2_rem = divmod(h_val, 2)
         h1_rem = h1_val % 2
-        return DM.DensityMatrix(DM.SPARSE_TYPE(np.kron(h[h1_rem], h[h2_rem]) @ np.kron(v[v1_rem], v[v2_rem]) @ CNOT1 @ CNOT2 @ CNOT1 @ np.kron(p[p1_rem], p[p2_rem]),dtype=np.complex64), energy_basis(2))
+        return np.kron(h[h1_rem], h[h2_rem]) @ np.kron(v[v1_rem], v[v2_rem]) @ CNOT1 @ CNOT2 @ CNOT1 @ np.kron(p[p1_rem], p[p2_rem])
 
     if numclass == 2:
         if index > 5184 or index <1:
@@ -103,7 +103,7 @@ def create_clifford_gate(numclass,index):
         h_val, v1_rem = divmod(hv1_val,3)
         h1_val, h2_rem = divmod(h_val, 2)
         h1_rem = h1_val % 2
-        return DM.DensityMatrix(DM.SPARSE_TYPE(np.kron(h[h1_rem], h[h2_rem]) @ np.kron(v[v1_rem],v[v2_rem]) @ CNOT1 @ np.kron(v[v3_rem], v[v4_rem]) @ np.kron(p[p1_rem], p[p2_rem]),dtype=np.complex64), energy_basis(2))
+        return np.kron(h[h1_rem], h[h2_rem]) @ np.kron(v[v1_rem],v[v2_rem]) @ CNOT1 @ np.kron(v[v3_rem], v[v4_rem]) @ np.kron(p[p1_rem], p[p2_rem])
 
     if numclass == 3:
         if index > 5184 or index < 1:
@@ -116,7 +116,7 @@ def create_clifford_gate(numclass,index):
         h_val, v1_rem = divmod(hv1_val, 3)
         h1_val, h2_rem = divmod(h_val, 2)
         h1_rem = h1_val % 2
-        return DM.DensityMatrix(DM.SPARSE_TYPE(np.kron(h[h1_rem], h[h2_rem]) @ np.kron(v[v1_rem], v[v2_rem]) @ CNOT1 @ CNOT2 @ np.kron(v[v3_rem],v[v4_rem]) @ np.kron(p[p1_rem], p[p2_rem]),dtype=np.complex64), energy_basis(2))
+        return np.kron(h[h1_rem], h[h2_rem]) @ np.kron(v[v1_rem], v[v2_rem]) @ CNOT1 @ CNOT2 @ np.kron(v[v3_rem],v[v4_rem]) @ np.kron(p[p1_rem], p[p2_rem])
 
 
 def create_u1_clifford_gate(numclass,index):
@@ -177,7 +177,7 @@ def create_u1_clifford_gate(numclass,index):
         ha_val, p1_rem = divmod(hap1_val,2)
         ha1_val, ha2_rem = divmod(ha_val,2)
         ha1_rem = ha1_val % 2
-        return DM.DensityMatrix(DM.SPARSE_TYPE(np.kron(ha[ha1_rem],ha[ha2_rem]) @ np.kron(p[p1_rem], p[p2_rem]),dtype=np.complex64), energy_basis(2))
+        return np.kron(ha[ha1_rem],ha[ha2_rem]) @ np.kron(p[p1_rem], p[p2_rem])
 
     if numclass == 4:
         if index > 16 or index <1:
@@ -186,7 +186,7 @@ def create_u1_clifford_gate(numclass,index):
         ha_val, p1_rem = divmod(hap1_val, 2)
         ha1_val, ha2_rem = divmod(ha_val, 2)
         ha1_rem = ha1_val % 2
-        return DM.DensityMatrix(DM.SPARSE_TYPE(np.kron(ha[ha1_rem],ha[ha2_rem]) @ CNOT1 @ CNOT2 @ CNOT1 @ np.kron(p[p1_rem], p[p2_rem]),dtype=np.complex64), energy_basis(2))
+        return np.kron(ha[ha1_rem],ha[ha2_rem]) @ CNOT1 @ CNOT2 @ CNOT1 @ np.kron(p[p1_rem], p[p2_rem])
 
     if numclass == 2:
         if index > 16 or index <1:
@@ -195,7 +195,7 @@ def create_u1_clifford_gate(numclass,index):
         hahb_val, p1_rem = divmod(hahbp1_val,2)
         ha_val, hb_rem = divmod(hahb_val,2)
         ha_rem = ha_val % 2
-        return DM.DensityMatrix(DM.SPARSE_TYPE(np.kron(ha[ha_rem],hb[hb_rem]) @ CNOT1 @ np.kron(I,W) @ np.kron(p[p1_rem],p[p2_rem]),dtype=np.complex64), energy_basis(2))
+        return np.kron(ha[ha_rem],hb[hb_rem]) @ CNOT1 @ np.kron(I,W) @ np.kron(p[p1_rem],p[p2_rem])
 
     if numclass == 3:
         if index > 16 or index < 1:
@@ -204,7 +204,7 @@ def create_u1_clifford_gate(numclass,index):
         hahb_val, p1_rem = divmod(hahbp1_val, 2)
         ha_val, hb_rem = divmod(hahb_val, 2)
         ha_rem = ha_val % 2
-        return DM.DensityMatrix(DM.SPARSE_TYPE(np.kron(hb[ha_rem],ha[hb_rem]) @ CNOT1 @ np.kron(I,W) @ np.kron(p[p1_rem],p[p2_rem]),dtype=np.complex64), energy_basis(2))
+        return np.kron(hb[ha_rem],ha[hb_rem]) @ CNOT1 @ np.kron(I,W) @ np.kron(p[p1_rem],p[p2_rem])
 
 
 def create_random_clifford_gate(numclass=0):
@@ -255,4 +255,347 @@ def create_random_u1_clifford_gate(numclass=0):
 
 
 
-print(create_random_u1_clifford_gate())
+def list_all_u1_clifford_gates():
+    for i in range(1,5):
+        for j in range(1,17):
+            print("np.array(", np.array2string(create_u1_clifford_gate(i,j), separator=', ', prefix='np.array('), ",dtype=complex),")
+
+def list_all_clifford_gates():
+    for i in range(1,577):
+        print("np.array(", np.array2string(create_clifford_gate(1,i), separator=', ', prefix='np.array('), ",dtype=complex),")
+        print("np.array(", np.array2string(create_clifford_gate(4, i), separator=', ', prefix='np.array('),
+              ",dtype=complex),")
+    for i in range(1,5185):
+        print("np.array(", np.array2string(create_clifford_gate(2, i), separator=', ', prefix='np.array('),
+              ",dtype=complex),")
+        print("np.array(", np.array2string(create_clifford_gate(3, i), separator=', ', prefix='np.array('),
+              ",dtype=complex),")
+
+
+
+def grab_u1_clifford_gate(SEED="NONE"):
+    if SEED != "NONE":
+        rng = np.random.default_rng(SEED)
+    gatelist = [
+        np.array([[1. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, -1. + 0.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 1. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 0. + 0.j, -1. + 0.j]], dtype=complex),
+        np.array([[1. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 1. + 0.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, -1. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 0. + 0.j, -1. + 0.j]], dtype=complex),
+        np.array([[1. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, -1. + 0.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, -1. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 0. + 0.j, 1. + 0.j]], dtype=complex),
+        np.array([[1. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 1.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 1. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 1.j]], dtype=complex),
+        np.array([[1. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. - 1.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 1. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 0. + 0.j, 0. - 1.j]], dtype=complex),
+        np.array([[1. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 1.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, -1. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 0. + 0.j, 0. - 1.j]], dtype=complex),
+        np.array([[1. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. - 1.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, -1. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 1.j]], dtype=complex),
+        np.array([[1. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 1. + 0.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 0. + 1.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 1.j]], dtype=complex),
+        np.array([[1. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, -1. + 0.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 0. + 1.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 0. + 0.j, 0. - 1.j]], dtype=complex),
+        np.array([[1. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 1. + 0.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 0. - 1.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 0. + 0.j, 0. - 1.j]], dtype=complex),
+        np.array([[1. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, -1. + 0.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 0. - 1.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 1.j]], dtype=complex),
+        np.array([[1. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 1.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 0. + 1.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 0. + 0.j, -1. + 0.j]], dtype=complex),
+        np.array([[1. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. - 1.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 0. + 1.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 0. + 0.j, 1. + 0.j]], dtype=complex),
+        np.array([[1. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 1.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 0. - 1.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 0. + 0.j, 1. + 0.j]], dtype=complex),
+        np.array([[1. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. - 1.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 0. - 1.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 0. + 0.j, -1. + 0.j]], dtype=complex),
+        np.array([[1. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 1. + 0.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 1. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 0. + 0.j, 1. + 0.j]], dtype=complex),
+        np.array([[0.70710678 + 0.70710678j, 0. + 0.j,
+                   0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, -0.70710678 - 0.70710678j,
+                   0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j,
+                   0.70710678 + 0.70710678j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j,
+                   0. + 0.j, 0.70710678 + 0.70710678j]], dtype=complex),
+        np.array([[0.70710678 + 0.70710678j, 0. + 0.j,
+                   0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0.70710678 + 0.70710678j,
+                   0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j,
+                   -0.70710678 - 0.70710678j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j,
+                   0. + 0.j, 0.70710678 + 0.70710678j]], dtype=complex),
+        np.array([[0.70710678 + 0.70710678j, 0. + 0.j,
+                   0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, -0.70710678 - 0.70710678j,
+                   0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j,
+                   -0.70710678 - 0.70710678j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j,
+                   0. + 0.j, -0.70710678 - 0.70710678j]], dtype=complex),
+        np.array([[1. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 1.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 1. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 0. + 0.j, 0. - 1.j]], dtype=complex),
+        np.array([[1. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. - 1.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 1. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 1.j]], dtype=complex),
+        np.array([[1. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 1.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, -1. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 1.j]], dtype=complex),
+        np.array([[1. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. - 1.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, -1. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 0. + 0.j, 0. - 1.j]], dtype=complex),
+        np.array([[0.70710678 + 0.70710678j, 0. + 0.j,
+                   0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0.70710678 + 0.70710678j,
+                   0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j,
+                   -0.70710678 + 0.70710678j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j,
+                   0. + 0.j, 0.70710678 - 0.70710678j]], dtype=complex),
+        np.array([[0.70710678 + 0.70710678j, 0. + 0.j,
+                   0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, -0.70710678 - 0.70710678j,
+                   0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j,
+                   -0.70710678 + 0.70710678j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j,
+                   0. + 0.j, -0.70710678 + 0.70710678j]], dtype=complex),
+        np.array([[0.70710678 + 0.70710678j, 0. + 0.j,
+                   0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0.70710678 + 0.70710678j,
+                   0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j,
+                   0.70710678 - 0.70710678j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j,
+                   0. + 0.j, -0.70710678 + 0.70710678j]], dtype=complex),
+        np.array([[0.70710678 + 0.70710678j, 0. + 0.j,
+                   0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, -0.70710678 - 0.70710678j,
+                   0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j,
+                   0.70710678 - 0.70710678j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j,
+                   0. + 0.j, 0.70710678 - 0.70710678j]], dtype=complex),
+        np.array([[1. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 1.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 0. + 1.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 0. + 0.j, 1. + 0.j]], dtype=complex),
+        np.array([[1. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. - 1.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 0. + 1.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 0. + 0.j, -1. + 0.j]], dtype=complex),
+        np.array([[1. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 1.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 0. - 1.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 0. + 0.j, -1. + 0.j]], dtype=complex),
+        np.array([[1. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. - 1.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 0. - 1.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 0. + 0.j, 1. + 0.j]], dtype=complex),
+        np.array([[0.70710678 + 0.70710678j, 0. + 0.j,
+                   0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0.70710678 + 0.70710678j,
+                   0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j,
+                   0.70710678 + 0.70710678j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j,
+                   0. + 0.j, -0.70710678 - 0.70710678j]], dtype=complex),
+        np.array([[0.35355339 + 0.35355339j, 0.35355339 - 0.35355339j,
+                   0.35355339 + 0.35355339j, -0.35355339 + 0.35355339j],
+                  [0.35355339 + 0.35355339j, -0.35355339 + 0.35355339j,
+                   0.35355339 + 0.35355339j, 0.35355339 - 0.35355339j],
+                  [0.35355339 - 0.35355339j, -0.35355339 - 0.35355339j,
+                   -0.35355339 + 0.35355339j, -0.35355339 - 0.35355339j],
+                  [0.35355339 - 0.35355339j, 0.35355339 + 0.35355339j,
+                   -0.35355339 + 0.35355339j, 0.35355339 + 0.35355339j]], dtype=complex),
+        np.array([[0.35355339 + 0.35355339j, -0.35355339 + 0.35355339j,
+                   -0.35355339 - 0.35355339j, -0.35355339 + 0.35355339j],
+                  [0.35355339 + 0.35355339j, 0.35355339 - 0.35355339j,
+                   -0.35355339 - 0.35355339j, 0.35355339 - 0.35355339j],
+                  [0.35355339 - 0.35355339j, 0.35355339 + 0.35355339j,
+                   0.35355339 - 0.35355339j, -0.35355339 - 0.35355339j],
+                  [0.35355339 - 0.35355339j, -0.35355339 - 0.35355339j,
+                   0.35355339 - 0.35355339j, 0.35355339 + 0.35355339j]], dtype=complex),
+        np.array([[0.35355339 + 0.35355339j, 0.35355339 - 0.35355339j,
+                   -0.35355339 - 0.35355339j, 0.35355339 - 0.35355339j],
+                  [0.35355339 + 0.35355339j, -0.35355339 + 0.35355339j,
+                   -0.35355339 - 0.35355339j, -0.35355339 + 0.35355339j],
+                  [0.35355339 - 0.35355339j, -0.35355339 - 0.35355339j,
+                   0.35355339 - 0.35355339j, 0.35355339 + 0.35355339j],
+                  [0.35355339 - 0.35355339j, 0.35355339 + 0.35355339j,
+                   0.35355339 - 0.35355339j, -0.35355339 - 0.35355339j]], dtype=complex),
+        np.array([[0.35355339 + 0.35355339j, -0.35355339 + 0.35355339j,
+                   0.35355339 + 0.35355339j, 0.35355339 - 0.35355339j],
+                  [-0.35355339 + 0.35355339j, 0.35355339 + 0.35355339j,
+                   -0.35355339 + 0.35355339j, -0.35355339 - 0.35355339j],
+                  [0.35355339 - 0.35355339j, 0.35355339 + 0.35355339j,
+                   -0.35355339 + 0.35355339j, 0.35355339 + 0.35355339j],
+                  [0.35355339 + 0.35355339j, 0.35355339 - 0.35355339j,
+                   -0.35355339 - 0.35355339j, 0.35355339 - 0.35355339j]], dtype=complex),
+        np.array([[0.35355339 + 0.35355339j, 0.35355339 - 0.35355339j,
+                   0.35355339 + 0.35355339j, -0.35355339 + 0.35355339j],
+                  [-0.35355339 + 0.35355339j, -0.35355339 - 0.35355339j,
+                   -0.35355339 + 0.35355339j, 0.35355339 + 0.35355339j],
+                  [0.35355339 - 0.35355339j, -0.35355339 - 0.35355339j,
+                   -0.35355339 + 0.35355339j, -0.35355339 - 0.35355339j],
+                  [0.35355339 + 0.35355339j, -0.35355339 + 0.35355339j,
+                   -0.35355339 - 0.35355339j, -0.35355339 + 0.35355339j]], dtype=complex),
+        np.array([[0.35355339 + 0.35355339j, -0.35355339 + 0.35355339j,
+                   -0.35355339 - 0.35355339j, -0.35355339 + 0.35355339j],
+                  [-0.35355339 + 0.35355339j, 0.35355339 + 0.35355339j,
+                   0.35355339 - 0.35355339j, 0.35355339 + 0.35355339j],
+                  [0.35355339 - 0.35355339j, 0.35355339 + 0.35355339j,
+                   0.35355339 - 0.35355339j, -0.35355339 - 0.35355339j],
+                  [0.35355339 + 0.35355339j, 0.35355339 - 0.35355339j,
+                   0.35355339 + 0.35355339j, -0.35355339 + 0.35355339j]], dtype=complex),
+        np.array([[0.35355339 + 0.35355339j, 0.35355339 - 0.35355339j,
+                   -0.35355339 - 0.35355339j, 0.35355339 - 0.35355339j],
+                  [-0.35355339 + 0.35355339j, -0.35355339 - 0.35355339j,
+                   0.35355339 - 0.35355339j, -0.35355339 - 0.35355339j],
+                  [0.35355339 - 0.35355339j, -0.35355339 - 0.35355339j,
+                   0.35355339 - 0.35355339j, 0.35355339 + 0.35355339j],
+                  [0.35355339 + 0.35355339j, -0.35355339 + 0.35355339j,
+                   0.35355339 + 0.35355339j, 0.35355339 - 0.35355339j]], dtype=complex),
+        np.array([[0.5 + 0.j, 0. + 0.5j, 0.5 + 0.j, 0. - 0.5j],
+                  [0.5 + 0.j, 0. - 0.5j, 0.5 + 0.j, 0. + 0.5j],
+                  [0.5 + 0.j, 0. + 0.5j, -0.5 + 0.j, 0. + 0.5j],
+                  [0.5 + 0.j, 0. - 0.5j, -0.5 + 0.j, 0. - 0.5j]], dtype=complex),
+        np.array([[0.5 + 0.j, 0. - 0.5j, 0.5 + 0.j, 0. + 0.5j],
+                  [0.5 + 0.j, 0. + 0.5j, 0.5 + 0.j, 0. - 0.5j],
+                  [0.5 + 0.j, 0. - 0.5j, -0.5 + 0.j, 0. - 0.5j],
+                  [0.5 + 0.j, 0. + 0.5j, -0.5 + 0.j, 0. + 0.5j]], dtype=complex),
+        np.array([[0.5 + 0.j, 0. + 0.5j, -0.5 + 0.j, 0. + 0.5j],
+                  [0.5 + 0.j, 0. - 0.5j, -0.5 + 0.j, 0. - 0.5j],
+                  [0.5 + 0.j, 0. + 0.5j, 0.5 + 0.j, 0. - 0.5j],
+                  [0.5 + 0.j, 0. - 0.5j, 0.5 + 0.j, 0. + 0.5j]], dtype=complex),
+        np.array([[0.5 + 0.j, 0. - 0.5j, -0.5 + 0.j, 0. - 0.5j],
+                  [0.5 + 0.j, 0. + 0.5j, -0.5 + 0.j, 0. + 0.5j],
+                  [0.5 + 0.j, 0. - 0.5j, 0.5 + 0.j, 0. + 0.5j],
+                  [0.5 + 0.j, 0. + 0.5j, 0.5 + 0.j, 0. - 0.5j]], dtype=complex),
+        np.array([[0.5 + 0.j, 0. + 0.5j, 0.5 + 0.j, 0. - 0.5j],
+                  [0. + 0.5j, 0.5 + 0.j, 0. + 0.5j, -0.5 + 0.j],
+                  [0.5 + 0.j, 0. + 0.5j, -0.5 + 0.j, 0. + 0.5j],
+                  [0. + 0.5j, 0.5 + 0.j, 0. - 0.5j, 0.5 + 0.j]], dtype=complex),
+        np.array([[0.5 + 0.j, 0. - 0.5j, 0.5 + 0.j, 0. + 0.5j],
+                  [0. + 0.5j, -0.5 + 0.j, 0. + 0.5j, 0.5 + 0.j],
+                  [0.5 + 0.j, 0. - 0.5j, -0.5 + 0.j, 0. - 0.5j],
+                  [0. + 0.5j, -0.5 + 0.j, 0. - 0.5j, -0.5 + 0.j]], dtype=complex),
+        np.array([[0.5 + 0.j, 0. + 0.5j, -0.5 + 0.j, 0. + 0.5j],
+                  [0. + 0.5j, 0.5 + 0.j, 0. - 0.5j, 0.5 + 0.j],
+                  [0.5 + 0.j, 0. + 0.5j, 0.5 + 0.j, 0. - 0.5j],
+                  [0. + 0.5j, 0.5 + 0.j, 0. + 0.5j, -0.5 + 0.j]], dtype=complex),
+        np.array([[0.5 + 0.j, 0. - 0.5j, -0.5 + 0.j, 0. - 0.5j],
+                  [0. + 0.5j, -0.5 + 0.j, 0. - 0.5j, -0.5 + 0.j],
+                  [0.5 + 0.j, 0. - 0.5j, 0.5 + 0.j, 0. + 0.5j],
+                  [0. + 0.5j, -0.5 + 0.j, 0. + 0.5j, 0.5 + 0.j]], dtype=complex),
+        np.array([[0.35355339 + 0.35355339j, -0.35355339 + 0.35355339j,
+                   0.35355339 + 0.35355339j, 0.35355339 - 0.35355339j],
+                  [0.35355339 + 0.35355339j, 0.35355339 - 0.35355339j,
+                   0.35355339 + 0.35355339j, -0.35355339 + 0.35355339j],
+                  [0.35355339 - 0.35355339j, 0.35355339 + 0.35355339j,
+                   -0.35355339 + 0.35355339j, 0.35355339 + 0.35355339j],
+                  [0.35355339 - 0.35355339j, -0.35355339 - 0.35355339j,
+                   -0.35355339 + 0.35355339j, -0.35355339 - 0.35355339j]], dtype=complex),
+        np.array([[1. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 1. + 0.j, 0. + 0.j],
+                  [0. + 0.j, -1. + 0.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 0. + 0.j, -1. + 0.j]], dtype=complex),
+        np.array([[1. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, -1. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 1. + 0.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 0. + 0.j, -1. + 0.j]], dtype=complex),
+        np.array([[1. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, -1. + 0.j, 0. + 0.j],
+                  [0. + 0.j, -1. + 0.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 0. + 0.j, 1. + 0.j]], dtype=complex),
+        np.array([[1. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 0. + 1.j, 0. + 0.j],
+                  [0. + 0.j, 1. + 0.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 1.j]], dtype=complex),
+        np.array([[1. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 0. + 1.j, 0. + 0.j],
+                  [0. + 0.j, -1. + 0.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 0. + 0.j, 0. - 1.j]], dtype=complex),
+        np.array([[1. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 0. - 1.j, 0. + 0.j],
+                  [0. + 0.j, 1. + 0.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 0. + 0.j, 0. - 1.j]], dtype=complex),
+        np.array([[1. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 0. - 1.j, 0. + 0.j],
+                  [0. + 0.j, -1. + 0.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 1.j]], dtype=complex),
+        np.array([[1. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 1. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 1.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 1.j]], dtype=complex),
+        np.array([[1. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 1. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. - 1.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 0. + 0.j, 0. - 1.j]], dtype=complex),
+        np.array([[1. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, -1. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 1.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 0. + 0.j, 0. - 1.j]], dtype=complex),
+        np.array([[1. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, -1. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. - 1.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 1.j]], dtype=complex),
+        np.array([[1. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 0. + 1.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 1.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 0. + 0.j, -1. + 0.j]], dtype=complex),
+        np.array([[1. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 0. + 1.j, 0. + 0.j],
+                  [0. + 0.j, 0. - 1.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 0. + 0.j, 1. + 0.j]], dtype=complex),
+        np.array([[1. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 0. - 1.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 1.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 0. + 0.j, 1. + 0.j]], dtype=complex),
+        np.array([[1. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 0. - 1.j, 0. + 0.j],
+                  [0. + 0.j, 0. - 1.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 0. + 0.j, -1. + 0.j]], dtype=complex),
+        np.array([[1. + 0.j, 0. + 0.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 1. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 1. + 0.j, 0. + 0.j, 0. + 0.j],
+                  [0. + 0.j, 0. + 0.j, 0. + 0.j, 1. + 0.j]], dtype=complex)]
+    return DM.DensityMatrix(DM.SPARSE_TYPE(rng.choice(gatelist),dtype=np.complex64), energy_basis(2))
+
