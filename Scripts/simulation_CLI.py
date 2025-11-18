@@ -239,7 +239,7 @@ def execute(file_name: str, connectivity, order_rule_name: str, unitary_energy_s
                                     verbose=verbosity,
                                     order_rule=order_rule,
                                     first_10_order=first_10_order,
-                                    NM_orders_list=NM_orders_list,
+                                    NM_orders_list=None,
                                     connectivity=connectivity,
                                     channel_prob=channel_prob,
                                     channels= channels,

@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.cm import viridis
+#from matplotlib.cm import Blues
 import random
 from collections import defaultdict, deque
 from scipy.linalg import cholesky
@@ -512,7 +512,9 @@ draw_quantum_circuit(8, 10, gates, "h.png")
 #draw_quantum_circuit(2, 4, gates, "two_q_noise_circuit.png")
 
 # Example usage:
-pattern = "gjgggj"
+pattern = "gjgggjgjgjggggjgjjjjjjgjgjggjgggj"
+patternbricl="gjgjgjgjgjgjgjgjgjgjgjgjgjgjgj"
+patternmn = "gggggjjjjjjjj"
 num_qubits = 8
-gates = generate_gate_sequence_from_NM_pattern(pattern, num_qubits)
-draw_quantum_circuit(num_qubits, len(pattern), gates, circuitname='eg.png')
+gates = generate_gate_sequence_from_NM_pattern(patternmn, num_qubits)
+draw_quantum_circuit(num_qubits, len(patternmn), gates, circuitname='egnm.png')

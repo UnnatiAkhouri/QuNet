@@ -347,8 +347,8 @@ def independent_dephasing(params: list[float]) -> list[np.ndarray]:
         p4 = 1 - p2
 
         K0 = np.sqrt(p0)*np.sqrt(p4) * np.kron(I, I)
-        K1 = np.sqrt(p1) * np.kron(Z, I)
-        K2 = np.sqrt(p2) * np.kron(I, Z)
+        K1 = np.sqrt(p1)*np.sqrt(p4) * np.kron(Z, I)
+        K2 = np.sqrt(p2) * np.sqrt(p0)* np.kron(I, Z)
         K3 = np.sqrt(p1)*np.sqrt(p2) * np.kron(Z, Z)
 
         return [K0, K1, K2, K3]
@@ -358,21 +358,15 @@ def correlated_dephasing(params: list[float]) -> list[np.ndarray]:
     """Correlated dephasing noise
     params: [gamma1, gamma2, gamma_c] - independent and correlated dephasing rates
     """
-    gamma1, gamma2, gamma_c = params[0], params[1], params[2]
+    gamma1 = params[0]
 
     # Probabilities for Kraus operators
     p1 = gamma1
-    p2 = gamma2
-    pc = gamma_c
-    p0 = 1 - p1 - p2 - pc  # Ensure probabilities sum to 1
 
     # Kraus operators
-    K0 = np.sqrt(p0) * np.kron(I, I)  # No error
-    K1 = np.sqrt(p1) * np.kron(Z, I)  # Dephasing on qubit 1
-    K2 = np.sqrt(p2) * np.kron(I, Z)  # Dephasing on qubit 2
-    K3 = np.sqrt(pc) * np.kron(Z, Z)  # Correlated dephasing
-
-    return [K0, K1, K2, K3]
+    K0 = np.sqrt(1-p1) * np.kron(I, I)  # No error
+    K1 = np.sqrt(p1) * np.kron(Z, Z)  # Dephasing on qubit 1 # Correlated dephasing
+    return [K0, K1]
 
 def independent_bitflip_kraus(p1, p2):
     """
@@ -692,3 +686,4 @@ channel = depolarizing_channel(0.1)
 channel.plot()
 # r_augmented = np.array([1, 0, 0, 1])  # [1, x, y, z]
 # r_new = apply_channel(r_augmented, channel)
+verify_completeness(independent_dephasing([0.1,0.2]))

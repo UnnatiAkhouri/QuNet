@@ -10,8 +10,10 @@ from src.random_unitary import random_energy_preserving_unitary
 from src.channels import phase_covariant_kraus_operators, create_uncorrelated_2qubit_kraus,create_perfectly_correlated_2qubit_kraus,embed_edge_channel_full,apply_composite_edge_channel,correlated_depolarizing
 from src.channels import CNOT_kraus
 
+
+
 def run(dm: DM.DensityMatrix, num_iterations: int, order_rule, first_10_order, sub_unitary, connectivity,
-        channel_prob: int,channels, Unitaries=None,return_all_dms=False, verbose=False):
+        channel_prob: int,channels, NM_orders_list = None, Unitaries=None,return_all_dms=False, verbose=False):
     """
     Args:
         dm: the density matrix to evolve
