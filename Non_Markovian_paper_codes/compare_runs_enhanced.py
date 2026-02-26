@@ -20,12 +20,10 @@ plt.rcParams.update({
 RULE_MAPPING = {
     'results_rand': '$R_0$',
     'rule_rand': '$R_0$',
-    #0300
-    'results_0330_test_without_analyse': '$R_1$',
-    'results_0330_test_without_analyse': '$R_1$',
-    #3032
-    'results_3000_test_without_analyse': '$R_2$',
-    'results_3000_test_without_analyse': '$R_2$',
+    'results_0300': '$R_1$',
+    'results_0300': '$R_1$',
+    'results_3032': '$R_2$',
+    'results_3032': '$R_2$',
     'results_2000': '$R_3$',
     'rule_2000': '$R_3$',
     'results_1302': '$R_4$',
