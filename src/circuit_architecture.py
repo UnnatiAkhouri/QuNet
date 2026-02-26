@@ -20,9 +20,9 @@ def draw_quantum_circuit(num_qubit, timesteps, gate_sequence,circuitname='quantu
     dot_radius = 0.05
     pastel_colors = {
         1: '#b3c6ff',  # blue
-        2: '#C1E1C1',  # green
+        4: '#C1E1C1',  # green
         3: '#fff7b3',  # yellow
-        4: '#ffb3d9',  # pink
+        2: '#ffb3d9',  # pink
         5: 'orange'
     }
 
@@ -31,12 +31,20 @@ def draw_quantum_circuit(num_qubit, timesteps, gate_sequence,circuitname='quantu
         y = num_qubit - q
         ax.add_patch(plt.Circle((0, y), dot_radius, color='black', zorder=5))
         ax.plot([0, timesteps * x_gap], [y, y], color='black', lw=1, zorder=1)
-        ax.text(-0.4, y, f'q{q}', ha='right', va='center', fontsize=12)
+        ax.text(-0.4, y, f'Q{q}', ha='right', va='center', fontsize=28)
 
     # Draw timestep labels
     for t in range(timesteps):
         x = (t + 1) * x_gap
-        ax.text(x, num_qubit + 0.7, f't{t+1}', ha='center', va='bottom', fontsize=12, color='gray')
+        #ax.text(x, 0, f'l{t+1}', ha='center', va='bottom', fontsize=25, color='gray')
+
+    for t in range(timesteps):
+        x = (t + 1) * x_gap
+        print(gate_sequence[t])
+        if gate_sequence[t] == [('G', 0, 1), ('G', 2, 3), ('G', 4, 5), ('G', 6, 7), ('G', 8, 9)]:
+            ax.text(x, num_qubit+0.7, f'A', ha='center', va='bottom', fontsize=28, color='gray')
+        else:
+            ax.text(x, num_qubit+0.7, f'B', ha='center', va='bottom', fontsize=28, color='gray')
 
     for t in range(timesteps):
         gates = gate_sequence[t]
@@ -61,7 +69,7 @@ def draw_quantum_circuit(num_qubit, timesteps, gate_sequence,circuitname='quantu
                     y = num_qubit - q
                     ax.add_patch(plt.Rectangle((x - 0.2, y - 0.2), 0.4, 0.4,
                                                facecolor=color, ec='black', zorder=3))
-                    ax.text(x, y, str(label), ha='center', va='center', fontsize=12, zorder=4,rotation =0)
+                    ax.text(x, y, str(), ha='center', va='center', fontsize=15, zorder=4,rotation =0)
                     used_qubits.add(q)
                 elif all(qubits_sorted[i] + 1 == qubits_sorted[i+1] for i in range(n-1)):
                     y_min = min(y_positions)
@@ -69,13 +77,13 @@ def draw_quantum_circuit(num_qubit, timesteps, gate_sequence,circuitname='quantu
                     height = y_max - y_min + 0.4
                     ax.add_patch(plt.Rectangle((x - 0.25, y_min - 0.2), 0.5, height,
                                                facecolor=color, ec='black', zorder=3))
-                    ax.text(x, (y_min + y_max) / 2, str(label), ha='center', va='center', fontsize=12, zorder=4, rotation =90)
+                    ax.text(x, (y_min + y_max) / 2, str(), ha='center', va='center', fontsize=12, zorder=4, rotation =90)
                     used_qubits.update(qubits)
                 else:
                     for y in y_positions:
                         ax.add_patch(plt.Circle((x, y), 0.18, facecolor=color, ec='black', zorder=3))
-                        ax.text(x, y, str(label), ha='center', va='center', fontsize=10, zorder=4)
-                    ax.plot([x]*len(y_positions), y_positions, 'k:', lw=1, zorder=2)
+                        ax.text(x, y, str(), ha='center', va='center', fontsize=10, zorder=4)
+                    #ax.plot([x]*len(y_positions), y_positions, 'k:', lw=1, zorder=2)
                     used_qubits.update(qubits)
 
         # Handle single-qubit gates (strings)
@@ -108,6 +116,87 @@ def draw_quantum_circuit(num_qubit, timesteps, gate_sequence,circuitname='quantu
     plt.tight_layout()
     plt.savefig(circuitname,dpi=300, bbox_inches='tight')
     plt.show()
+
+def draw_collapsed_brickwork_circuit(pattern, num_qubits, circuitname='brickwork_circuit.png'):
+    """
+    Draw brickwork circuit with depth-based coloring.
+    Endpoints (qubits 0 and num_qubits-1) are shown as interacting with a circle at each endpoint, matching draw_quantum_circuit style.
+    """
+    import matplotlib.pyplot as plt
+
+    x_gap = 1
+    dot_radius = 0.05
+
+    def get_color(count):
+        pinks = ['#ffb3d9', '#ff99cc', '#ff80bf', '#ff66b3', '#ff4da6', '#ff3399', '#ff1a8c', '#ff007f']
+        return pinks[min(count - 1, len(pinks) - 1)]
+
+    # Collapse pattern
+    collapsed = []
+    if pattern:
+        current_char = pattern[0]
+        count = 1
+        for char in pattern[1:]:
+            if char == current_char:
+                count += 1
+            else:
+                collapsed.append((count, current_char))
+                current_char = char
+                count = 1
+        collapsed.append((count, current_char))
+
+    fig, ax = plt.subplots(figsize=(2 + len(collapsed), 1 + num_qubits * 0.7))
+    ax.axis('off')
+    for q in range(num_qubits):
+        y = num_qubits - q
+        ax.add_patch(plt.Circle((0, y), dot_radius, color='black', zorder=5))
+        ax.plot([0, len(collapsed) * x_gap], [y, y], color='black', lw=1, zorder=1)
+        ax.text(-0.4, y, f'Q{q}', ha='right', va='center', fontsize=28)
+
+    for layer in range(len(collapsed)):
+        x = (layer + 1) * x_gap
+        ax.text(x, 0, f'l{layer + 1}', ha='center', va='bottom', fontsize=25, color='gray')
+
+    for layer in range(len(collapsed)):
+        x = (layer + 1) * x_gap
+        if layer % 2 == 0:
+            ax.text(x, num_qubits+0.5, 'a', ha='center', va='bottom', fontsize=28, color='gray')
+        else:
+            ax.text(x, num_qubits+0.5, 'b', ha='center', va='bottom', fontsize=28, color='gray')
+    for layer, (count, gate_type) in enumerate(collapsed):
+        color = get_color(count)
+        x = (layer + 1) * x_gap
+        offset = layer % 2
+
+        # Draw 2-qubit gates in brickwork pattern
+        for i in range(offset, num_qubits - 1, 2):
+            q1, q2 = i, i + 1
+            y1 = num_qubits - q1
+            y2 = num_qubits - q2
+            y_min = min(y1, y2)
+            height = 1.4
+            ax.add_patch(plt.Rectangle((x - 0.25, y_min - 0.2), 0.5, height,
+                                       facecolor=color, ec='black', zorder=3))
+        # Draw circles for endpoint interaction on odd layers
+        if offset == 1 and num_qubits > 2:
+            y_top = num_qubits - 0
+            y_bot = num_qubits - (num_qubits - 1)
+            # Draw a circle at each endpoint
+            ax.add_patch(plt.Circle((x, y_top), 0.18, facecolor=color, ec='black', zorder=3))
+            ax.add_patch(plt.Circle((x, y_bot), 0.18, facecolor=color, ec='black', zorder=3))
+            # Connect endpoints with a dotted line
+            #ax.plot([x, x], [y_top, y_bot], 'k:', lw=1, zorder=2)
+
+    ax.set_xlim(-0.5, len(collapsed) * x_gap + 0.5)
+    ax.set_ylim(0.5, num_qubits + 0.5)
+    plt.tight_layout()
+    plt.savefig(circuitname, dpi=300, bbox_inches='tight')
+    plt.show()
+
+
+
+
+
 
 
 def generate_gate_sequence_from_NM_pattern(pattern_string, num_qubits, gate_name='G'):
@@ -511,10 +600,14 @@ gates=random_two_qubit_gate_sequence_with_edge_noise(8, 10, gate_name='iSWAP',p=
 draw_quantum_circuit(8, 10, gates, "h.png")
 #draw_quantum_circuit(2, 4, gates, "two_q_noise_circuit.png")
 
+
+
+
 # Example usage:
-pattern = "gjgggjgjgjggggjgjjjjjjgjgjggjgggj"
+pattern = "gjggggggjgjjjjgjgjgg"
 patternbricl="gjgjgjgjgjgjgjgjgjgjgjgjgjgjgj"
 patternmn = "gggggjjjjjjjj"
-num_qubits = 8
-gates = generate_gate_sequence_from_NM_pattern(patternmn, num_qubits)
-draw_quantum_circuit(num_qubits, len(patternmn), gates, circuitname='egnm.png')
+num_qubits = 10
+gates = generate_gate_sequence_from_NM_pattern(pattern, num_qubits)
+draw_quantum_circuit(num_qubits, len(pattern), gates, circuitname='sample_circuit.png')
+draw_collapsed_brickwork_circuit(pattern,10)

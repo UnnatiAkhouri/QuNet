@@ -1,0 +1,7 @@
+parameter,value
+L,10
+threshold,1e-08
+arrival_threshold,1e-08
+num_runs,1000
+stop_at_boundary,False
+theta_csv,collapsed_sequences_0300_1000seq_2000steps.csv
